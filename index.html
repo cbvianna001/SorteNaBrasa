@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorte na Brasa</title>
-    <!-- Importação robusta do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
         :root { --primary: #d35400; --primary-dark: #a04000; --bg: #fdf5e6; --text: #2d3436; }
@@ -30,77 +29,72 @@
         <div class="logo-area">
             <div class="logo-placeholder"><img src="logo.png" alt="Logo" onerror="this.style.display='none'"></div>
             <h1>Sorte na Brasa</h1>
+            <p style="text-align:center; font-size:14px; color:#555;">Valor por número: <strong>R$ 5,00</strong></p>
         </div>
-        <!-- Indicador de carregamento visual -->
+        
         <div id="grid-numeros" class="grid">
-            <p style="grid-column: span 10; text-align: center; color: #555;">Carregando números do banco...</p>
+            <p style="grid-column: span 10; text-align: center; color: #555;">Carregando números...</p>
         </div>
+
         <div class="checkout-box">
             <p>Selecionados: <strong id="txt-selecionados">Nenhum</strong></p>
             <form id="form-pagamento">
                 <input type="text" id="nome" placeholder="Nome Completo" required>
                 <input type="text" id="whatsapp" placeholder="Seu WhatsApp" required>
-                <button type="submit" id="btn-reservar" disabled>Reservar e Pagar</button>
+                <button type="submit" id="btn-reservar" disabled>Avançar para o Pagamento</button>
             </form>
+
             <div id="area-pagamento" class="hidden" style="background:#f9f9f9; padding:15px; border-radius:5px; margin-top:10px; text-align:center;">
-                <p>Chave Pix CPF: <strong>463.803.218-45</strong></p>
-                <p style="font-size: 13px; color: #555;">Ou clique abaixo para concluir o pagamento pelo link do PagBank:</p>
-                <a id="link-pagbank" href="https://pag.ae/824DnejEs" target="_blank" style="display:block; background:#00a868; color:white; padding:12px; text-align:center; text-decoration:none; border-radius:5px; font-weight:bold; margin-bottom:10px;">Pagar com PagBank</a>
-                <a id="link-whatsapp" href="#" target="_blank" style="display:block; background:#25d366; color:white; padding:10px; text-align:center; text-decoration:none; border-radius:5px; font-size:14px;">Avisar no WhatsApp</a>
+                <p>Total a pagar: <strong id="txt-valor-total" style="color: #27ae60; font-size: 18px;">R$ 0,00</strong></p>
+                <p style="font-size: 13px; margin-bottom: 5px;">Chave Pix CPF (PagBank):</p>
+                <input type="text" value="463.803.218-45" readonly style="text-align:center; font-weight:bold; background:#fff;" onclick="this.select(); alert('Chave Pix copiada!');">
+                <p style="font-size: 11px; color:#666; margin-top:0;">(Toque na chave para copiar)</p>
+                <a id="link-whatsapp" href="#" target="_blank" style="display:block; background:#25d366; color:white; padding:12px; text-align:center; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:10px;">Enviar Comprovante no WhatsApp</a>
             </div>
         </div>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Insira sua chave aqui
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Cole sua chave anon/public aqui
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let selecionados = [];
+        const VALOR_NUMERO = 5.00;
 
         async function carregarRifa() {
             const grid = document.getElementById('grid-numeros');
+            const { data: rifas, error } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
             
-            try {
-                const { data: rifas, error } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
-                
-                if (error) {
-                    grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: red;">Erro ao carregar banco de dados.</p>';
-                    console.error(error);
-                    return;
-                }
-
-                if (!rifas || rifas.length === 0) {
-                    grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: orange;">Nenhum número encontrado na tabela.</p>';
-                    return;
-                }
-
-                grid.innerHTML = '';
-                rifas.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'numero ' + item.status;
-                    div.innerText = item.numero;
-                    
-                    if(item.status === 'disponivel') {
-                        div.onclick = () => {
-                            if(selecionados.includes(item.numero)) {
-                                selecionados = selecionados.filter(n => n !== item.numero);
-                                div.classList.remove('selecionado');
-                            } else {
-                                selecionados.push(item.numero);
-                                div.classList.add('selecionado');
-                            }
-                            document.getElementById('txt-selecionados').innerText = selecionados.length > 0 ? selecionados.join(', ') : 'Nenhum';
-                            document.getElementById('btn-reservar').disabled = selecionados.length === 0;
-                        };
-                    }
-                    grid.appendChild(div);
-                });
-            } catch (err) {
-                console.error(err);
-                grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: red;">Falha de conexão com o Supabase.</p>';
+            if (error) {
+                grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: red;">Erro ao conectar com o banco.</p>';
+                return;
             }
+
+            grid.innerHTML = '';
+            rifas.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'numero ' + item.status;
+                div.innerText = item.numero;
+                
+                if(item.status === 'disponivel') {
+                    div.onclick = () => {
+                        if(selecionados.includes(item.numero)) {
+                            selecionados = selecionados.filter(n => n !== item.numero);
+                            div.classList.remove('selecionado');
+                        } else {
+                            selecionados.push(item.numero);
+                            div.classList.add('selecionado');
+                        }
+                        
+                        selecionados.sort((a, b) => a - b);
+                        document.getElementById('txt-selecionados').innerText = selecionados.length > 0 ? selecionados.join(', ') : 'Nenhum';
+                        document.getElementById('btn-reservar').disabled = selecionados.length === 0;
+                    };
+                }
+                grid.appendChild(div);
+            });
         }
 
         document.getElementById('form-pagamento').onsubmit = async (e) => {
@@ -112,8 +106,11 @@
                 await _supabase.from('rifa_numeros').update({ status: 'reservado', nome_comprador: nomeComprador, whatsapp: wppComprador }).eq('numero', num);
             }
 
-            const msg = encodeURIComponent("Olá! Reservei os números " + selecionados.join(', ') + " na Sorte na Brasa. Segue o comprovante.");
-            document.getElementById('link-whatsapp').href = "https://wa.me/55129992474896?text=" + msg;
+            const totalPagar = (selecionados.length * VALOR_NUMERO).toFixed(2).replace('.', ',');
+            document.getElementById('txt-valor-total').innerText = "R$ " + totalPagar;
+
+            const msg = encodeURIComponent(`Olá! Me chamo ${nomeComprador} e reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagar}. Segue o comprovante do Pix:`);
+            document.getElementById('link-whatsapp').href = `https://wa.me/55129992474896?text=${msg}`;
             
             document.getElementById('area-pagamento').classList.remove('hidden');
             document.getElementById('form-pagamento').classList.add('hidden');
