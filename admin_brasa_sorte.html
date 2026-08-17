@@ -5,22 +5,23 @@
     <title>Admin - Sorte na Brasa</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .pago { border-left: 5px solid #27ae60; }
-        .reservado { border-left: 5px solid #f39c12; }
-        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; }
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .card.pago { border-left: 6px solid #27ae60; }
+        .card.reservado { border-left: 6px solid #f39c12; }
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; margin-top: 5px; }
         .btn-pago { background: #27ae60; color: white; }
         .btn-limpar { background: #c0392b; color: white; }
+        h1 { color: #d35400; text-align: center; }
     </style>
 </head>
 <body>
-    <h1>Painel Administrativo</h1>
-    <div id="lista-admin">Carregando...</div>
+    <h1>Painel de Controle - Sorte na Brasa</h1>
+    <div id="lista-admin">Carregando dados...</div>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // Mesma chave do site
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // Mesma chave pública
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -28,33 +29,67 @@
             const container = document.getElementById('lista-admin');
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
             
-            container.innerHTML = '';
+            // Agrupar por comprador (Nome + CPF)
+            let clientesMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
+                
+                let chave = (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
+                if (!clientesMap[chave]) {
+                    clientesMap[chave] = {
+                        nome: item.nome_comprador,
+                        cpf: item.cpf,
+                        whatsapp: item.whatsapp,
+                        statusGeral: item.status, // reservado ou pago
+                        numeros: []
+                    };
+                }
+                clientesMap[chave].numeros.push(item.numero);
+                // Se houver qualquer número pago no lote, podemos refletir
+                if(item.status === 'pago') clientesMap[chave].statusGeral = 'pago';
+            });
+
+            container.innerHTML = '';
+            const chaves = Object.keys(clientesMap);
+
+            if (chaves.length === 0) {
+                container.innerHTML = '<p style="text-align:center;">Nenhum número reservado ou vendido até o momento.</p>';
+                return;
+            }
+
+            chaves.forEach(chave => {
+                let cliente = clientesMap[chave];
+                let totalNumeros = cliente.numeros.length;
+                let valorTotal = totalNumeros * 5.00;
 
                 const div = document.createElement('div');
-                div.className = 'card ' + item.status;
+                div.className = 'card ' + cliente.statusGeral;
                 div.innerHTML = `
                     <div>
-                        <strong>Nº ${item.numero} - ${item.status.toUpperCase()}</strong><br>
-                        Nome: ${item.nome_comprador || 'N/A'}<br>
-                        Wpp: ${item.whatsapp || 'N/A'}
+                        <strong>Nome:</strong> ${cliente.nome}<br>
+                        <strong>CPF:</strong> ${cliente.cpf || 'Não informado'}<br>
+                        <strong>WhatsApp:</strong> ${cliente.whatsapp || 'Não informado'}<br>
+                        <strong>Status:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${cliente.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${cliente.statusGeral}</span><br>
+                        <strong>Quantidade de Números:</strong> ${totalNumeros} número(s) (${cliente.numeros.join(', ')})<br>
+                        <strong>Valor Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
                     </div>
-                    <div>
-                        ${item.status === 'reservado' ? `<button class="btn-pago" onclick="atualizar(${item.numero}, 'pago')">Confirmar Pagamento</button>` : ''}
-                        <button class="btn-limpar" onclick="atualizar(${item.numero}, 'disponivel')">Limpar</button>
+                    <div style="margin-top: 10px;">
+                        ${cliente.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "pago")'>Confirmar Pagamento do Lote</button>` : ''}
+                        <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "disponivel")'>Liberar / Devolver Números</button>
                     </div>
                 `;
                 container.appendChild(div);
             });
         }
 
-        async function atualizar(numero, novoStatus) {
+        async function atualizarLote(numerosArray, novoStatus) {
             const updateData = novoStatus === 'disponivel' 
-                ? { status: 'disponivel', nome_comprador: null, whatsapp: null }
+                ? { status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null }
                 : { status: novoStatus };
 
-            await _supabase.from('rifa_numeros').update(updateData).eq('numero', numero);
+            for (let num of numerosArray) {
+                await _supabase.from('rifa_numeros').update(updateData).eq('numero', num);
+            }
             carregarAdmin();
         }
 

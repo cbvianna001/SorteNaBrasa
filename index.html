@@ -40,6 +40,7 @@
             <p>Selecionados: <strong id="txt-selecionados">Nenhum</strong></p>
             <form id="form-pagamento">
                 <input type="text" id="nome" placeholder="Nome Completo" required>
+                <input type="text" id="cpf" placeholder="CPF (Ex: 000.000.000-00)" required>
                 <input type="text" id="whatsapp" placeholder="Seu WhatsApp" required>
                 <button type="submit" id="btn-reservar" disabled>Avançar para o Pagamento</button>
             </form>
@@ -100,16 +101,22 @@
         document.getElementById('form-pagamento').onsubmit = async (e) => {
             e.preventDefault();
             const nomeComprador = document.getElementById('nome').value;
+            const cpfComprador = document.getElementById('cpf').value;
             const wppComprador = document.getElementById('whatsapp').value;
 
             for(let num of selecionados) {
-                await _supabase.from('rifa_numeros').update({ status: 'reservado', nome_comprador: nomeComprador, whatsapp: wppComprador }).eq('numero', num);
+                await _supabase.from('rifa_numeros').update({ 
+                    status: 'reservado', 
+                    nome_comprador: nomeComprador, 
+                    cpf: cpfComprador, 
+                    whatsapp: wppComprador 
+                }).eq('numero', num);
             }
 
             const totalPagar = (selecionados.length * VALOR_NUMERO).toFixed(2).replace('.', ',');
             document.getElementById('txt-valor-total').innerText = "R$ " + totalPagar;
 
-            const msg = encodeURIComponent(`Olá! Me chamo ${nomeComprador} e reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagar}. Segue o comprovante do Pix:`);
+            const msg = encodeURIComponent(`Olá! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagar}. Segue o comprovante do Pix:`);
             document.getElementById('link-whatsapp').href = `https://wa.me/55129992474896?text=${msg}`;
             
             document.getElementById('area-pagamento').classList.remove('hidden');
