@@ -21,15 +21,21 @@
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // Mesma chave pública
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Mesma chave pública do site
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Função de cálculo que deve ser igual à do index.html
+        function calcularValorTotal(qtd) {
+            let blocos = Math.floor(qtd / 5);
+            let resto = qtd % 5;
+            return (blocos * 20.00) + (resto * 5.00);
+        }
 
         async function carregarAdmin() {
             const container = document.getElementById('lista-admin');
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
             
-            // Agrupar por comprador (Nome + CPF)
             let clientesMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
@@ -40,12 +46,11 @@
                         nome: item.nome_comprador,
                         cpf: item.cpf,
                         whatsapp: item.whatsapp,
-                        statusGeral: item.status, // reservado ou pago
+                        statusGeral: item.status,
                         numeros: []
                     };
                 }
                 clientesMap[chave].numeros.push(item.numero);
-                // Se houver qualquer número pago no lote, podemos refletir
                 if(item.status === 'pago') clientesMap[chave].statusGeral = 'pago';
             });
 
@@ -53,14 +58,14 @@
             const chaves = Object.keys(clientesMap);
 
             if (chaves.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">Nenhum número reservado ou vendido até o momento.</p>';
+                container.innerHTML = '<p style="text-align:center;">Nenhum número reservado ou vendido.</p>';
                 return;
             }
 
             chaves.forEach(chave => {
                 let cliente = clientesMap[chave];
                 let totalNumeros = cliente.numeros.length;
-                let valorTotal = totalNumeros * 5.00;
+                let valorTotal = calcularValorTotal(totalNumeros);
 
                 const div = document.createElement('div');
                 div.className = 'card ' + cliente.statusGeral;
@@ -70,12 +75,12 @@
                         <strong>CPF:</strong> ${cliente.cpf || 'Não informado'}<br>
                         <strong>WhatsApp:</strong> ${cliente.whatsapp || 'Não informado'}<br>
                         <strong>Status:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${cliente.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${cliente.statusGeral}</span><br>
-                        <strong>Quantidade de Números:</strong> ${totalNumeros} número(s) (${cliente.numeros.join(', ')})<br>
+                        <strong>Números (${totalNumeros}):</strong> ${cliente.numeros.join(', ')}<br>
                         <strong>Valor Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
                     </div>
                     <div style="margin-top: 10px;">
-                        ${cliente.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "pago")'>Confirmar Pagamento do Lote</button>` : ''}
-                        <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "disponivel")'>Liberar / Devolver Números</button>
+                        ${cliente.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "pago")'>Confirmar Pagamento</button>` : ''}
+                        <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "disponivel")'>Liberar Números</button>
                     </div>
                 `;
                 container.appendChild(div);

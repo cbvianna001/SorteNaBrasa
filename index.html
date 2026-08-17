@@ -8,19 +8,35 @@
     <style>
         :root { --primary: #d35400; --primary-dark: #a04000; --bg: #fdf5e6; --text: #2d3436; }
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 10px; margin: 0; }
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 40px; }
         .logo-area { text-align: center; margin-bottom: 15px; }
         .logo-placeholder { width: 100px; height: 100px; margin: 0 auto; border-radius: 50%; overflow: hidden; background: #eee; border: 2px dashed var(--primary); }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
         h1 { text-align: center; color: var(--primary); font-size: 22px; margin: 10px 0; }
+        
+        /* Barra de Progresso */
+        .progress-box { background: #eee; border-radius: 10px; overflow: hidden; height: 20px; margin: 15px 0; position: relative; }
+        .progress-bar { background: #27ae60; height: 100%; width: 0%; transition: width 0.5s; }
+        .progress-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 11px; font-weight: bold; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.5); }
+
         .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin: 15px 0; width: 100%; }
         .numero { padding: 8px 0; text-align: center; border-radius: 4px; font-size: 12px; font-weight: bold; background: #27ae60; color: white; cursor: pointer; }
         .numero.reservado { background: #f39c12; cursor: not-allowed; opacity: 0.7; }
         .numero.pago { background: #c0392b; cursor: not-allowed; opacity: 0.7; }
         .numero.selecionado { background: #3498db !important; border: 2px solid #2980b9; }
+        
         .checkout-box { margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
         input { width: 100%; padding: 10px; margin-bottom: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         button { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        
+        /* Seção FAQ e Regras */
+        .info-section { margin-top: 25px; border-top: 2px solid #eee; padding-top: 15px; font-size: 13px; }
+        .info-section h3 { color: var(--primary); margin-bottom: 8px; }
+        .faq-item { margin-bottom: 10px; }
+        
+        /* Botão Flutuante do WhatsApp */
+        .whatsapp-float { position: fixed; bottom: 20px; right: 20px; background: #25d366; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-decoration: none; z-index: 1000; }
+        
         .hidden { display: none; }
     </style>
 </head>
@@ -29,9 +45,15 @@
         <div class="logo-area">
             <div class="logo-placeholder"><img src="logo.png" alt="Logo" onerror="this.style.display='none'"></div>
             <h1>Sorte na Brasa</h1>
-            <p style="text-align:center; font-size:14px; color:#555;">Valor por número: <strong>R$ 5,00</strong></p>
+            <p style="text-align:center; font-size:14px; color:#555;">1 número por <strong>R$ 5,00</strong> ou <strong>5 números por R$ 20,00!</strong></p>
         </div>
         
+        <!-- Barra de Progresso -->
+        <div class="progress-box">
+            <div id="barra-progresso" class="progress-bar"></div>
+            <div id="texto-progresso" class="progress-text">0% vendidos</div>
+        </div>
+
         <div id="grid-numeros" class="grid">
             <p style="grid-column: span 10; text-align: center; color: #555;">Carregando números...</p>
         </div>
@@ -53,16 +75,38 @@
                 <a id="link-whatsapp" href="#" target="_blank" style="display:block; background:#25d366; color:white; padding:12px; text-align:center; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:10px;">Enviar Comprovante no WhatsApp</a>
             </div>
         </div>
+
+        <!-- Seção de Regras e FAQ -->
+        <div class="info-section">
+            <h3>Regras do Sorteio</h3>
+            <p>O ganhador será definido através do sorteio dos últimos 3 números da Loteria Federal (de 001 a 100).</p>
+            
+            <h3>Perguntas Frequentes (FAQ)</h3>
+            <div class="faq-item">
+                <strong>• Como é feito o sorteio?</strong><br>
+                É uma ação privada, porém com base nos resultados da Loteria Federal.
+            </div>
+            <div class="faq-item">
+                <strong>• Como recebo o prêmio?</strong><br>
+                Estamos localizados em São José dos Campos-SP. A retirada é por conta do ganhador ou via pequeno frete negociado.
+            </div>
+            <div class="faq-item">
+                <strong>• Onde posso tirar dúvidas?</strong><br>
+                Diretamente pelo nosso WhatsApp de suporte (12) 99247-4896.
+            </div>
+        </div>
     </div>
+
+    <!-- Botão Flutuante do WhatsApp -->
+    <a href="https://wa.me/55129992474896?text=Olá! Gostaria de tirar uma dúvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank">💬</a>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Cole sua chave anon/public aqui
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Insira sua chave pública aqui
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let selecionados = [];
-        const VALOR_NUMERO = 5.00;
 
         async function carregarRifa() {
             const grid = document.getElementById('grid-numeros');
@@ -72,6 +116,12 @@
                 grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: red;">Erro ao conectar com o banco.</p>';
                 return;
             }
+
+            // Calcular Progresso
+            let totalOcupados = rifas.filter(item => item.status !== 'disponivel').length;
+            let porcentagem = Math.round((totalOcupados / rifas.length) * 100);
+            document.getElementById('barra-progresso').style.width = porcentagem + '%';
+            document.getElementById('texto-progresso').innerText = `${porcentagem}% dos números vendidos/reservados`;
 
             grid.innerHTML = '';
             rifas.forEach(item => {
@@ -98,6 +148,18 @@
             });
         }
 
+        // Lógica de cálculo com desconto automático (5 números por R$ 20,00)
+        function calcularValorTotal(qtd) {
+            if (qtd >= 5) {
+                // A cada bloco de 5 números = R$ 20,00. O restante sai a R$ 5,00 cada.
+                let blocos = Math.floor(qtd / 5);
+                let resto = qtd % 5;
+                return (blocos * 20.00) + (resto * 5.00);
+            } else {
+                return qtd * 5.00;
+            }
+        }
+
         document.getElementById('form-pagamento').onsubmit = async (e) => {
             e.preventDefault();
             const nomeComprador = document.getElementById('nome').value;
@@ -113,10 +175,11 @@
                 }).eq('numero', num);
             }
 
-            const totalPagar = (selecionados.length * VALOR_NUMERO).toFixed(2).replace('.', ',');
-            document.getElementById('txt-valor-total').innerText = "R$ " + totalPagar;
+            const valorTotal = calcularValorTotal(selecionados.length);
+            const totalPagarFormatado = valorTotal.toFixed(2).replace('.', ',');
+            document.getElementById('txt-valor-total').innerText = "R$ " + totalPagarFormatado;
 
-            const msg = encodeURIComponent(`Olá! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagar}. Segue o comprovante do Pix:`);
+            const msg = encodeURIComponent(`Olá! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagarFormatado}. Segue o comprovante do Pix:`);
             document.getElementById('link-whatsapp').href = `https://wa.me/55129992474896?text=${msg}`;
             
             document.getElementById('area-pagamento').classList.remove('hidden');
