@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Sorte na Brasa</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .pago { border-left: 5px solid #27ae60; }
+        .reservado { border-left: 5px solid #f39c12; }
+        button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-pago { background: #27ae60; color: white; }
+        .btn-limpar { background: #c0392b; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Painel Administrativo</h1>
+    <div id="lista-admin">Carregando...</div>
+
+    <script>
+        const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // Mesma chave do site
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function carregarAdmin() {
+            const container = document.getElementById('lista-admin');
+            const { data: rifas } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
+            
+            container.innerHTML = '';
+            rifas.forEach(item => {
+                if (item.status === 'disponivel') return;
+
+                const div = document.createElement('div');
+                div.className = 'card ' + item.status;
+                div.innerHTML = `
+                    <div>
+                        <strong>Nº ${item.numero} - ${item.status.toUpperCase()}</strong><br>
+                        Nome: ${item.nome_comprador || 'N/A'}<br>
+                        Wpp: ${item.whatsapp || 'N/A'}
+                    </div>
+                    <div>
+                        ${item.status === 'reservado' ? `<button class="btn-pago" onclick="atualizar(${item.numero}, 'pago')">Confirmar Pagamento</button>` : ''}
+                        <button class="btn-limpar" onclick="atualizar(${item.numero}, 'disponivel')">Limpar</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        async function atualizar(numero, novoStatus) {
+            const updateData = novoStatus === 'disponivel' 
+                ? { status: 'disponivel', nome_comprador: null, whatsapp: null }
+                : { status: novoStatus };
+
+            await _supabase.from('rifa_numeros').update(updateData).eq('numero', numero);
+            carregarAdmin();
+        }
+
+        carregarAdmin();
+    </script>
+</body>
+</html>
