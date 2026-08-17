@@ -6,187 +6,91 @@
     <title>Sorte na Brasa</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --primary: #d35400;
-            --primary-dark: #a04000;
-            --bg: #fdf5e6;
-            --text: #2d3436;
-        }
-
+        :root { --primary: #d35400; --primary-dark: #a04000; --bg: #fdf5e6; --text: #2d3436; }
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 10px; margin: 0; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        
         .logo-area { text-align: center; margin-bottom: 15px; }
         .logo-placeholder { width: 100px; height: 100px; margin: 0 auto; border-radius: 50%; overflow: hidden; background: #eee; border: 2px dashed var(--primary); }
         .logo-placeholder img { width: 100%; height: 100%; object-fit: cover; }
-        
         h1 { text-align: center; color: var(--primary); font-size: 22px; margin: 10px 0; }
-        .preco-info { text-align: center; font-size: 14px; color: #555; margin-bottom: 15px; }
-
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(10, 1fr); 
-            gap: 4px; 
-            margin: 15px 0;
-            width: 100%;
-        }
-
-        .numero { 
-            padding: 8px 0; 
-            text-align: center; 
-            border-radius: 4px; 
-            font-size: 12px; 
-            font-weight: bold; 
-        }
-
-        .numero.disponivel { background: #27ae60; color: white; cursor: pointer; }
-        .numero.disponivel:hover { background: #219653; }
-        .numero.reservado { background: #f39c12; color: white; cursor: not-allowed; opacity: 0.8; }
-        .numero.pago { background: #c0392b; color: white; cursor: not-allowed; opacity: 0.8; }
-        .numero.selecionado { background: #3498db !important; border: 2px solid #2980b9; color: white; }
-
+        .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin: 15px 0; width: 100%; }
+        .numero { padding: 8px 0; text-align: center; border-radius: 4px; font-size: 12px; font-weight: bold; background: #27ae60; color: white; cursor: pointer; }
+        .numero.reservado { background: #f39c12; cursor: not-allowed; opacity: 0.7; }
+        .numero.pago { background: #c0392b; cursor: not-allowed; opacity: 0.7; }
+        .numero.selecionado { background: #3498db !important; border: 2px solid #2980b9; }
         .checkout-box { margin-top: 15px; border-top: 2px solid #eee; padding-top: 10px; }
-        input { width: 100%; padding: 10px; margin-bottom: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 15px; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        
+        input { width: 100%; padding: 10px; margin-bottom: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .hidden { display: none; }
-        .pix-box { background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #ddd; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
-
     <div class="container">
         <div class="logo-area">
-            <div class="logo-placeholder">
-                <img src="logo.png" alt="Logo Sorte na Brasa" onerror="this.style.display='none'">
-            </div>
+            <div class="logo-placeholder"><img src="logo.png" alt="Logo" onerror="this.style.display='none'"></div>
             <h1>Sorte na Brasa</h1>
-            <p class="preco-info">Valor por número: <strong>R$ 5,00</strong></p>
         </div>
-
-        <!-- Grade de 100 Números -->
         <div id="grid-numeros" class="grid"></div>
-
         <div class="checkout-box">
-            <p>Números selecionados: <strong id="txt-selecionados">Nenhum</strong></p>
-            <p>Total a pagar: <strong id="txt-total" style="color: #27ae60;">R$ 0,00</strong></p>
-            
+            <p>Selecionados: <strong id="txt-selecionados">Nenhum</strong></p>
             <form id="form-pagamento">
-                <input type="text" id="nome" placeholder="Seu Nome Completo" required>
-                <input type="text" id="whatsapp" placeholder="Seu WhatsApp (com DDD)" required>
-                <button type="submit" id="btn-reservar" disabled>Avançar para o Pagamento Pix</button>
+                <input type="text" id="nome" placeholder="Nome Completo" required>
+                <input type="text" id="whatsapp" placeholder="Seu WhatsApp" required>
+                <button type="submit" id="btn-reservar" disabled>Reservar e Pagar</button>
             </form>
-
-            <!-- Área que exibe a instrução do Pix após clicar -->
-            <div id="area-pix" class="pix-box hidden">
-                <h3 style="margin-top:0; color: #d35400;">Chave Pix PagBank</h3>
-                <p style="font-size: 13px;">Copie sua chave Pix (E-mail, CPF ou CNPJ do PagBank) e faça a transferência do valor exato:</p>
-                <input type="text" id="sua-chave-pix" value="46380321845" readonly style="background:#eee; text-align:center; font-weight:bold;">
-                <p style="font-size: 12px; color: #c0392b; font-weight: bold;">⚠️ Envie o comprovante no WhatsApp após pagar!</p>
-                <a id="link-whatsapp" href="#" target="_blank" style="display:block; background:#25d366; color:white; padding:10px; text-decoration:none; border-radius:5px; font-weight:bold; margin-top:5px;">Enviar Comprovante no WhatsApp</a>
+            <div id="area-pagamento" class="hidden" style="background:#f9f9f9; padding:15px; border-radius:5px; margin-top:10px; text-align:center;">
+                <p>Chave Pix CPF: <strong>463.803.218-45</strong></p>
+                <p style="font-size: 13px; color: #555;">Ou clique abaixo para concluir o pagamento pelo link do PagBank:</p>
+                <a id="link-pagbank" href="https://pag.ae/824DnejEs" target="_blank" style="display:block; background:#00a868; color:white; padding:12px; text-align:center; text-decoration:none; border-radius:5px; font-weight:bold; margin-bottom:10px;">Pagar com PagBank</a>
+                <a id="link-whatsapp" href="#" target="_blank" style="display:block; background:#25d366; color:white; padding:10px; text-align:center; text-decoration:none; border-radius:5px; font-size:14px;">Avisar no WhatsApp</a>
             </div>
         </div>
     </div>
 
     <script>
-        // --- SUAS CREDENCIAIS DO SUPABASE ---
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw';
+        const SUPABASE_ANON_KEY = 'sb_publishable_w2zUdgFdpkXW8I-INoX6pA_flZVzA6h'; // <--- Insira sua chave anon/public aqui
         
-        const supabase = supabase.createClient(https://ietzotyphojdfgtbsbmo.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw);
-        const VALOR_NUMERO = 5.00; // Valor definido para a rifa
-
-        const gridElement = document.getElementById('grid-numeros');
-        const txtSelecionados = document.getElementById('txt-selecionados');
-        const txtTotal = document.getElementById('txt-total');
-        const btnReservar = document.getElementById('btn-reservar');
-        const formPagamento = document.getElementById('form-pagamento');
-        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let selecionados = [];
 
-        // Carregar os 100 números do Supabase
         async function carregarRifa() {
-            gridElement.innerHTML = '';
-            
-            let { data: rifas, error } = await supabase
-                .from('rifa_numeros')
-                .select('*')
-                .order('numero', { ascending: true });
-
-            if (error) {
-                console.error('Erro ao carregar rifa:', error);
-                return;
-            }
-
+            const grid = document.getElementById('grid-numeros');
+            const { data: rifas } = await supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
+            grid.innerHTML = '';
             rifas.forEach(item => {
                 const div = document.createElement('div');
-                div.className = 'numero';
+                div.className = 'numero ' + item.status;
                 div.innerText = item.numero;
-
-                if (item.status === 'disponivel') {
-                    div.classList.add('disponivel');
-                    div.onclick = () => alternarSelecao(item.numero, div);
-                } else if (item.status === 'reservado') {
-                    div.classList.add('reservado');
-                } else if (item.status === 'pago') {
-                    div.classList.add('pago');
-                }
-
-                gridElement.appendChild(div);
+                if(item.status === 'disponivel') div.onclick = () => {
+                    if(selecionados.includes(item.numero)) {
+                        selecionados = selecionados.filter(n => n !== item.numero);
+                        div.classList.remove('selecionado');
+                    } else {
+                        selecionados.push(item.numero);
+                        div.classList.add('selecionado');
+                    }
+                    document.getElementById('txt-selecionados').innerText = selecionados.join(', ');
+                    document.getElementById('btn-reservar').disabled = selecionados.length === 0;
+                };
+                grid.appendChild(div);
             });
         }
 
-        function alternarSelecao(numero, elemento) {
-            if (selecionados.includes(numero)) {
-                selecionados = selecionados.filter(n => n !== numero);
-                elemento.classList.remove('selecionado');
-            } else {
-                selecionados.push(numero);
-                elemento.classList.add('selecionado');
-            }
-
-            selecionados.sort((a, b) => a - b);
-            txtSelecionados.innerText = selecionados.length > 0 ? selecionados.join(', ') : 'Nenhum';
-            
-            const total = selecionados.length * VALOR_NUMERO;
-            txtTotal.innerText = `R$ ${total.toFixed(2).replace('.', ',')}`;
-            
-            btnReservar.disabled = selecionados.length === 0;
-        }
-
-        // Salvar reserva e liberar dados do Pix do PagBank
-        formPagamento.onsubmit = async (e) => {
+        document.getElementById('form-pagamento').onsubmit = async (e) => {
             e.preventDefault();
-            const nome = document.getElementById('nome').value;
-            const whatsapp = document.getElementById('whatsapp').value;
+            const nomeComprador = document.getElementById('nome').value;
+            const wppComprador = document.getElementById('whatsapp').value;
 
-            btnReservar.disabled = true;
-            btnReservar.innerText = 'Reservando números...';
-
-            for (let num of selecionados) {
-                await supabase
-                    .from('rifa_numeros')
-                    .update({ 
-                        status: 'reservado', 
-                        nome_comprador: nome, 
-                        whatsapp: whatsapp 
-                    })
-                    .eq('numero', num);
+            for(let num of selecionados) {
+                await supabase.from('rifa_numeros').update({ status: 'reservado', nome_comprador: nomeComprador, whatsapp: wppComprador }).eq('numero', num);
             }
 
-            // Calcular valor total
-            const totalGeral = (selecionados.length * VALOR_NUMERO).toFixed(2).replace('.', ',');
-
-            // Configurar link do WhatsApp com mensagem pronta
-            const msg = encodeURIComponent(`Olá! Reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa. Meu nome é ${nome}, totalizando R$ ${totalGeral}. Segue o comprovante do Pix:`);
-            document.getElementById('link-whatsapp').href = `https://wa.me/5512992474896?text=${msg}`; // Substitua SEUNUMEROQUEROWHATTSAPP pelo seu DDD e WhatsApp
-
-            // Esconder form e mostrar dados do Pix do PagBank
-            formPagamento.classList.add('hidden');
-            document.getElementById('area-pix').classList.remove('hidden');
-
-            alert(`Números ${selecionados.join(', ')} reservados com sucesso! Faça o Pix para concluir.`);
+            const msg = encodeURIComponent("Olá! Reservei os números " + selecionados.join(', ') + " na Sorte na Brasa. Segue o comprovante.");
+            document.getElementById('link-whatsapp').href = "https://wa.me/55129992474896?text=" + msg;
+            
+            document.getElementById('area-pagamento').classList.remove('hidden');
+            document.getElementById('form-pagamento').classList.add('hidden');
             carregarRifa();
         };
 
