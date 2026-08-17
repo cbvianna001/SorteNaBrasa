@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorte na Brasa</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Importação robusta do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
         :root { --primary: #d35400; --primary-dark: #a04000; --bg: #fdf5e6; --text: #2d3436; }
         body { font-family: sans-serif; background-color: var(--bg); color: var(--text); padding: 10px; margin: 0; }
@@ -30,7 +31,10 @@
             <div class="logo-placeholder"><img src="logo.png" alt="Logo" onerror="this.style.display='none'"></div>
             <h1>Sorte na Brasa</h1>
         </div>
-        <div id="grid-numeros" class="grid"></div>
+        <!-- Indicador de carregamento visual -->
+        <div id="grid-numeros" class="grid">
+            <p style="grid-column: span 10; text-align: center; color: #555;">Carregando números do banco...</p>
+        </div>
         <div class="checkout-box">
             <p>Selecionados: <strong id="txt-selecionados">Nenhum</strong></p>
             <form id="form-pagamento">
@@ -49,32 +53,54 @@
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_w2zUdgFdpkXW8I-INoX6pA_flZVzA6h'; // <--- Insira sua chave anon/public aqui
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Insira sua chave aqui
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let selecionados = [];
 
         async function carregarRifa() {
             const grid = document.getElementById('grid-numeros');
-            const { data: rifas } = await supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
-            grid.innerHTML = '';
-            rifas.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'numero ' + item.status;
-                div.innerText = item.numero;
-                if(item.status === 'disponivel') div.onclick = () => {
-                    if(selecionados.includes(item.numero)) {
-                        selecionados = selecionados.filter(n => n !== item.numero);
-                        div.classList.remove('selecionado');
-                    } else {
-                        selecionados.push(item.numero);
-                        div.classList.add('selecionado');
+            
+            try {
+                const { data: rifas, error } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
+                
+                if (error) {
+                    grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: red;">Erro ao carregar banco de dados.</p>';
+                    console.error(error);
+                    return;
+                }
+
+                if (!rifas || rifas.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: orange;">Nenhum número encontrado na tabela.</p>';
+                    return;
+                }
+
+                grid.innerHTML = '';
+                rifas.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'numero ' + item.status;
+                    div.innerText = item.numero;
+                    
+                    if(item.status === 'disponivel') {
+                        div.onclick = () => {
+                            if(selecionados.includes(item.numero)) {
+                                selecionados = selecionados.filter(n => n !== item.numero);
+                                div.classList.remove('selecionado');
+                            } else {
+                                selecionados.push(item.numero);
+                                div.classList.add('selecionado');
+                            }
+                            document.getElementById('txt-selecionados').innerText = selecionados.length > 0 ? selecionados.join(', ') : 'Nenhum';
+                            document.getElementById('btn-reservar').disabled = selecionados.length === 0;
+                        };
                     }
-                    document.getElementById('txt-selecionados').innerText = selecionados.join(', ');
-                    document.getElementById('btn-reservar').disabled = selecionados.length === 0;
-                };
-                grid.appendChild(div);
-            });
+                    grid.appendChild(div);
+                });
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = '<p style="grid-column: span 10; text-align: center; color: red;">Falha de conexão com o Supabase.</p>';
+            }
         }
 
         document.getElementById('form-pagamento').onsubmit = async (e) => {
@@ -83,7 +109,7 @@
             const wppComprador = document.getElementById('whatsapp').value;
 
             for(let num of selecionados) {
-                await supabase.from('rifa_numeros').update({ status: 'reservado', nome_comprador: nomeComprador, whatsapp: wppComprador }).eq('numero', num);
+                await _supabase.from('rifa_numeros').update({ status: 'reservado', nome_comprador: nomeComprador, whatsapp: wppComprador }).eq('numero', num);
             }
 
             const msg = encodeURIComponent("Olá! Reservei os números " + selecionados.join(', ') + " na Sorte na Brasa. Segue o comprovante.");
