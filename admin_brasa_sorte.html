@@ -5,27 +5,60 @@
     <title>Admin - Sorte na Brasa</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; max-width: 800px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f4f4f4; max-width: 800px; margin: 0 auto; }
         .card { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card.pago { border-left: 6px solid #27ae60; }
         .card.reservado { border-left: 6px solid #f39c12; }
         button { padding: 8px 12px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; margin-top: 5px; }
         .btn-pago { background: #27ae60; color: white; }
         .btn-limpar { background: #c0392b; color: white; }
+        .btn-config { background: #2980b9; color: white; }
+        .btn-zerar { background: #c0392b; color: white; padding: 12px; width: 100%; font-size: 15px; margin-top: 10px; }
+        .btn-sorteador { background: #8e44ad; color: white; padding: 12px; width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-radius: 6px; }
         h1 { color: #d35400; text-align: center; }
+        .config-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; }
+        .historico-box { background: #fff; padding: 15px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        input[type="number"] { padding: 8px; width: 100px; border-radius: 4px; border: 1px solid #ccc; text-align: center; font-weight: bold; }
+        .resultado-sorteio { background: #f39c12; color: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 20px; display: none; }
     </style>
 </head>
 <body>
     <h1>Painel de Controle - Sorte na Brasa</h1>
+    
+    <!-- Área do Sorteador Automático -->
+    <div style="text-align: center;">
+        <button class="btn-sorteador" onclick="realizarSorteio()">🎲 Sortear Número Premiado Agora!</button>
+    </div>
+    <div id="resultado-sorteio" class="resultado-sorteio"></div>
+
+    <!-- Painel de Configurações e Ações Globais -->
+    <div class="config-box">
+        <h3>Configuração de Números da Rifa</h3>
+        <p style="font-size: 13px; color: #666;">Defina quantos números esta rifa terá no total:</p>
+        <input type="number" id="input-qtd-total" value="100" min="10" max="1000">
+        <button class="btn-config" onclick="atualizarTotalNumeros()">Salvar Nova Quantidade</button>
+        
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+        
+        <h3 style="color: #c0392b;">Área de Sorteio / Reiniciar</h3>
+        <p style="font-size: 12px; color: #555;">Ao zerar, os dados atuais serão salvos automaticamente no Histórico abaixo.</p>
+        <button class="btn-zerar" onclick="zerarEArquivarRifa()">🔄 Salvar Histórico e Zerar Rifa</button>
+    </div>
+
     <div id="lista-admin">Carregando dados...</div>
+
+    <!-- Seção de Histórico de Sorteios Anteriores -->
+    <div class="historico-box">
+        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">📂 Histórico de Vendas Anteriores</h3>
+        <div id="lista-historico">Carregando histórico...</div>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Mesma chave pública do site
+        const SUPABASE_ANON_KEY = 'COLE_SUA_PUBLISHABLE_KEY_AQUI'; // <--- Mesma chave pública do site
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Função de cálculo que deve ser igual à do index.html
         function calcularValorTotal(qtd) {
             let blocos = Math.floor(qtd / 5);
             let resto = qtd % 5;
@@ -36,13 +69,17 @@
             const container = document.getElementById('lista-admin');
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
             
-            let clientesMap = {};
+            if (rifas && rifas.length > 0) {
+                document.getElementById('input-qtd-total').value = rifas.length;
+            }
+
+            let gruposMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
                 
-                let chave = (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
-                if (!clientesMap[chave]) {
-                    clientesMap[chave] = {
+                let chave = item.status + '-' + (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
+                if (!gruposMap[chave]) {
+                    gruposMap[chave] = {
                         nome: item.nome_comprador,
                         cpf: item.cpf,
                         whatsapp: item.whatsapp,
@@ -50,41 +87,41 @@
                         numeros: []
                     };
                 }
-                clientesMap[chave].numeros.push(item.numero);
-                if(item.status === 'pago') clientesMap[chave].statusGeral = 'pago';
+                gruposMap[chave].numeros.push(item.numero);
             });
 
             container.innerHTML = '';
-            const chaves = Object.keys(clientesMap);
+            const chaves = Object.keys(gruposMap);
 
             if (chaves.length === 0) {
-                container.innerHTML = '<p style="text-align:center;">Nenhum número reservado ou vendido.</p>';
-                return;
+                container.innerHTML = '<p style="text-align:center; background:white; padding:20px; border-radius:8px;">Nenhum número reservado ou vendido no momento.</p>';
+            } else {
+                chaves.forEach(chave => {
+                    let grupo = gruposMap[chave];
+                    let totalNumeros = grupo.numeros.length;
+                    let valorTotal = calcularValorTotal(totalNumeros);
+
+                    const div = document.createElement('div');
+                    div.className = 'card ' + grupo.statusGeral;
+                    div.innerHTML = `
+                        <div>
+                            <strong>Nome:</strong> ${grupo.nome}<br>
+                            <strong>CPF:</strong> ${grupo.cpf || 'Não informado'}<br>
+                            <strong>WhatsApp:</strong> ${grupo.whatsapp || 'Não informado'}<br>
+                            <strong>Status do Lote:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${grupo.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${grupo.statusGeral}</span><br>
+                            <strong>Números (${totalNumeros}):</strong> ${grupo.numeros.join(', ')}<br>
+                            <strong>Valor Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
+                        </div>
+                        <div style="margin-top: 10px;">
+                            ${grupo.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(grupo.numeros)}, "pago")'>Confirmar Pagamento</button>` : ''}
+                            <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(grupo.numeros)}, "disponivel")'>Liberar Números</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
             }
 
-            chaves.forEach(chave => {
-                let cliente = clientesMap[chave];
-                let totalNumeros = cliente.numeros.length;
-                let valorTotal = calcularValorTotal(totalNumeros);
-
-                const div = document.createElement('div');
-                div.className = 'card ' + cliente.statusGeral;
-                div.innerHTML = `
-                    <div>
-                        <strong>Nome:</strong> ${cliente.nome}<br>
-                        <strong>CPF:</strong> ${cliente.cpf || 'Não informado'}<br>
-                        <strong>WhatsApp:</strong> ${cliente.whatsapp || 'Não informado'}<br>
-                        <strong>Status:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${cliente.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${cliente.statusGeral}</span><br>
-                        <strong>Números (${totalNumeros}):</strong> ${cliente.numeros.join(', ')}<br>
-                        <strong>Valor Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
-                    </div>
-                    <div style="margin-top: 10px;">
-                        ${cliente.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "pago")'>Confirmar Pagamento</button>` : ''}
-                        <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(cliente.numeros)}, "disponivel")'>Liberar Números</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
+            carregarHistorico();
         }
 
         async function atualizarLote(numerosArray, novoStatus) {
@@ -96,6 +133,129 @@
                 await _supabase.from('rifa_numeros').update(updateData).eq('numero', num);
             }
             carregarAdmin();
+        }
+
+        async function atualizarTotalNumeros() {
+            const novaQtd = parseInt(document.getElementById('input-qtd-total').value);
+            if (!novaQtd || novaQtd <= 0) {
+                alert('Digite um número válido!');
+                return;
+            }
+
+            if (!confirm(`Deseja alterar a quantidade total da rifa para ${novaQtd} números?`)) return;
+
+            const { data: rifasAtuais } = await _supabase.from('rifa_numeros').select('*');
+            const totalAtual = rifasAtuais.length;
+
+            if (novaQtd > totalAtual) {
+                let novosRegistros = [];
+                for (let i = totalAtual + 1; i <= novaQtd; i++) {
+                    novosRegistros.push({ numero: i, status: 'disponivel' });
+                }
+                await _supabase.from('rifa_numeros').insert(novosRegistros);
+            } else if (novaQtd < totalAtual) {
+                for (let i = totalAtual; i > novaQtd; i--) {
+                    await _supabase.from('rifa_numeros').delete().eq('numero', i);
+                }
+            }
+
+            alert('Quantidade de números atualizada com sucesso!');
+            carregarAdmin();
+        }
+
+        // Sorteador Automático entre os números PAGOS
+        async function realizarSorteio() {
+            const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
+            const pagos = rifas.filter(item => item.status === 'pago');
+
+            if (pagos.length === 0) {
+                alert('Não há números com pagamento confirmado (pago) para realizar o sorteio!');
+                return;
+            }
+
+            // Sorteia aleatoriamente um dos itens pagos
+            const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
+            
+            const divResultado = document.getElementById('resultado-sorteio');
+            divResultado.style.display = 'block';
+            divResultado.innerHTML = `🎉 NÚMERO SORTEADO: <strong>${sorteado.numero}</strong><br>Ganhador: <strong>${sorteado.nome_comprador}</strong> (CPF: ${sorteado.cpf || 'N/A'})!`;
+        }
+
+        // Salva os dados no Histórico e depois zera a rifa principal
+        async function zerarEArquivarRifa() {
+            if (!confirm('ATENÇÃO: Deseja salvar o histórico dos compradores atuais e zerar a rifa para um novo sorteio?')) {
+                return;
+            }
+
+            const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
+            
+            // Agrupa os dados atuais para salvar no histórico
+            let clientesMap = {};
+            rifas.forEach(item => {
+                if (item.status === 'disponivel') return;
+                let chave = (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
+                if (!clientesMap[chave]) {
+                    clientesMap[chave] = {
+                        nome: item.nome_comprador,
+                        cpf: item.cpf,
+                        whatsapp: item.whatsapp,
+                        numeros: []
+                    };
+                }
+                clientesMap[chave].numeros.push(item.numero);
+            });
+
+            // Insere cada comprador na tabela de histórico
+            let historicoParaInserir = [];
+            for (let chave in clientesMap) {
+                let c = clientesMap[chave];
+                historicoParaInserir.push({
+                    nome: c.nome,
+                    cpf: c.cpf,
+                    whatsapp: c.whatsapp,
+                    numeros: c.numeros.join(', '),
+                    total_pago: calcularValorTotal(c.numeros.length)
+                });
+            }
+
+            if (historicoParaInserir.length > 0) {
+                await _supabase.from('historico_vendas').insert(historicoParaInserir);
+            }
+
+            // Zera a tabela principal
+            await _supabase
+                .from('rifa_numeros')
+                .update({ status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null })
+                .gte('numero', 1);
+
+            alert('Histórico salvo com sucesso e rifa zerada para a próxima edição!');
+            document.getElementById('resultado-sorteio').style.display = 'none';
+            carregarAdmin();
+        }
+
+        async function carregarHistorico() {
+            const containerHist = document.getElementById('lista-historico');
+            const { data: historico, error } = await _supabase.from('historico_vendas').select('*').order('data_salvamento', { ascending: false });
+
+            if (error || !historico || historico.length === 0) {
+                containerHist.innerHTML = '<p style="font-size: 13px; color: #777;">Nenhum histórico de sorteio anterior salvo ainda.</p>';
+                return;
+            }
+
+            containerHist.innerHTML = '';
+            historico.forEach(h => {
+                let dataFormatada = new Date(h.data_salvamento).toLocaleDateString('pt-BR') + ' às ' + new Date(h.data_salvamento).toLocaleTimeString('pt-BR');
+                const divH = document.createElement('div');
+                divH.style.cssText = "background: #f9f9f9; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #8e44ad; font-size: 13px;";
+                divH.innerHTML = `
+                    <strong>Data do Sorteio/Fechamento:</strong> ${dataFormatada}<br>
+                    <strong>Comprador:</strong> ${h.nome} (CPF: ${h.cpf || 'N/A'})<br>
+                    <strong>WhatsApp:</strong> ${h.whatsapp || 'N/A'}<br>
+                    <strong>Números:</strong> ${h.numeros}<br>
+                    <strong>Total Arrecadado deste participante:</strong> R$ ${Number(h.total_pago).toFixed(2).replace('.', ',')}
+                `;
+                containerHist.appendChild(divH);
+            });
         }
 
         carregarAdmin();
