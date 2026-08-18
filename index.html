@@ -32,7 +32,6 @@
             margin-bottom: 50px; 
         }
         
-        /* Botão do Instagram Estilizado */
         .instagram-header { 
             text-align: center; 
             margin-bottom: 20px; 
@@ -69,13 +68,11 @@
         h1 { text-align: center; color: var(--primary-dark); font-size: 26px; margin: 5px 0; }
         .sub-title { text-align: center; font-size: 14px; color: #636e72; margin-bottom: 15px; }
 
-        /* Barra de Progresso Bonita */
         .progress-container { margin: 20px 0; background: #f1f2f6; border-radius: 12px; padding: 4px; }
         .progress-box { background: #dfe4ea; border-radius: 10px; overflow: hidden; height: 22px; position: relative; }
         .progress-bar { background: linear-gradient(90deg, #2ecc71, #27ae60); height: 100%; width: 0%; transition: width 0.6s ease; border-radius: 10px; }
         .progress-text { position: absolute; width: 100%; text-align: center; top: 2px; font-size: 12px; font-weight: bold; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
-        /* Grade de Números */
         .grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; margin: 20px 0; }
         .numero { 
             padding: 10px 0; 
@@ -94,7 +91,6 @@
         .numero.pago { background: #c0392b; cursor: not-allowed; opacity: 0.7; transform: none; }
         .numero.selecionado { background: #2980b9 !important; transform: scale(1.05); box-shadow: 0 0 8px rgba(41, 128, 185, 0.6); }
         
-        /* Checkout */
         .checkout-box { margin-top: 25px; border-top: 2px dashed #dfe4ea; padding-top: 20px; }
         .checkout-box p { font-size: 15px; margin-bottom: 10px; }
         
@@ -126,12 +122,10 @@
         button:hover { filter: brightness(1.1); }
         button:disabled { background: #b2bec3; box-shadow: none; cursor: not-allowed; }
         
-        /* Seção FAQ e Regras */
         .info-section { margin-top: 30px; border-top: 2px dashed #dfe4ea; padding-top: 20px; font-size: 13px; color: #57606f; }
         .info-section h3 { color: var(--primary-dark); margin-bottom: 10px; font-size: 16px; }
         .faq-item { margin-bottom: 12px; background: #f8f9fa; padding: 10px 12px; border-radius: 8px; }
         
-        /* Botão Flutuante do WhatsApp */
         .whatsapp-float { 
             position: fixed; 
             bottom: 25px; 
@@ -157,7 +151,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- Botão do Instagram em Destaque -->
         <div class="instagram-header">
             <a href="https://www.instagram.com/sortenabrasarifas" target="_blank" class="instagram-btn">
                  Siga nosso Instagram: @sortenabrasarifas
@@ -170,7 +163,6 @@
             <div class="sub-title">1 numero por <strong>R$ 5,00</strong> ou <strong>5 numeros por R$ 20,00!</strong></div>
         </div>
         
-        <!-- Barra de Progresso -->
         <div class="progress-container">
             <div class="progress-box">
                 <div id="barra-progresso" class="progress-bar"></div>
@@ -200,15 +192,14 @@
             </div>
         </div>
 
-        <!-- Seção de Regras e FAQ -->
         <div class="info-section">
             <h3>Regras do Sorteio</h3>
-            <p>O ganhador sera definido atraves do sorteio dos ultimos 3 numeros da Loteria Federal (de 001 a 100).</p>
+            <p>Faremos o sorteio atraves de um sorteador automatico.</p>
             
             <h3>Perguntas Frequentes (FAQ)</h3>
             <div class="faq-item">
                 <strong>• Como e feito o sorteio?</strong><br>
-                E uma acao privada, porem com base nos resultados da Loteria Federal.
+                Faremos o sorteio atraves de um sorteador automatico.
             </div>
             <div class="faq-item">
                 <strong>• Como recebo o premio?</strong><br>
@@ -221,7 +212,7 @@
         </div>
     </div>
 
-    <a href="https://wa.me/5512992474896?text=Ola! Gostaria de tirar uma duvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank"></a>
+    <a href="https://wa.me/55129992474896?text=Ola! Gostaria de tirar uma duvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank"></a>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
@@ -296,7 +287,7 @@
             document.getElementById('txt-valor-total').innerText = "R$ " + totalPagarFormatado;
 
             const msg = encodeURIComponent(`Ola! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os numeros: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagarFormatado}. Segue o comprovante do Pix:`);
-            document.getElementById('link-whatsapp').href = `https://wa.me/5512992474896?text=${msg}`;
+            document.getElementById('link-whatsapp').href = `https://wa.me/55129992474896?text=${msg}`;
             
             document.getElementById('area-pagamento').classList.remove('hidden');
             document.getElementById('form-pagamento').classList.add('hidden');
