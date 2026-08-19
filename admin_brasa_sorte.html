@@ -25,18 +25,26 @@
 <body>
     <h1>Painel de Controle - Sorte na Brasa</h1>
     
-    <!-- Área do Sorteador Automático -->
     <div style="text-align: center;">
         <button class="btn-sorteador" onclick="realizarSorteio()">🎲 Sortear Número Premiado Agora!</button>
     </div>
     <div id="resultado-sorteio" class="resultado-sorteio"></div>
 
-    <!-- Painel de Configurações e Ações Globais -->
     <div class="config-box">
-        <h3>Configuração de Números da Rifa</h3>
-        <p style="font-size: 13px; color: #666;">Defina quantos números esta rifa terá no total:</p>
-        <input type="number" id="input-qtd-total" value="100" min="10" max="1000">
-        <button class="btn-config" onclick="atualizarTotalNumeros()">Salvar Nova Quantidade</button>
+        <h3>Configurações da Rifa</h3>
+        <div style="margin-bottom: 15px;">
+            <p style="font-size: 13px; color: #666;">Valor de cada número (R$):</p>
+            <input type="number" id="input-valor-numero" step="0.50" min="1.00">
+            <button class="btn-config" onclick="atualizarValorPreco()">Salvar Novo Preço</button>
+        </div>
+
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+
+        <div>
+            <p style="font-size: 13px; color: #666;">Quantidade total de números:</p>
+            <input type="number" id="input-qtd-total" value="100" min="10" max="1000">
+            <button class="btn-config" onclick="atualizarTotalNumeros()">Salvar Quantidade</button>
+        </div>
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         
@@ -47,7 +55,6 @@
 
     <div id="lista-admin">Carregando dados...</div>
 
-    <!-- Seção de Histórico de Sorteios Anteriores -->
     <div class="historico-box">
         <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">📂 Histórico de Vendas Anteriores</h3>
         <div id="lista-historico">Carregando histórico...</div>
@@ -55,17 +62,53 @@
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Mesma chave pública do site
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Mesma chave pública
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let valorUnitario = 5.00; // Padrão inicial
+
+        async function carregarConfiguracoes() {
+            const { data } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
+            if (data) {
+                valorUnitario = parseFloat(data.valor);
+                document.getElementById('input-valor-numero').value = valorUnitario.toFixed(2);
+            }
+        }
+
         function calcularValorTotal(qtd) {
+            // Se mantivermos a regra de 5 por R$ 20 proporcional ao novo valor unitário:
+            // Caso queira linear simples, mude para qtd * valorUnitario. Vamos manter proporcional:
+            let precoUnit = valorUnitario;
+            let precoCinco = precoUnit * 4; // Exemplo de desconto proporcional
             let blocos = Math.floor(qtd / 5);
             let resto = qtd % 5;
-            return (blocos * 20.00) + (resto * 5.00);
+            return (blocos * precoCinco) + (resto * precoUnit);
+        }
+
+        async function atualizarValorPreco() {
+            const novoValor = parseFloat(document.getElementById('input-valor-numero').value);
+            if (!novoValor || novoValor <= 0) {
+                alert('Digite um valor válido!');
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('configuracoes')
+                .update({ valor: novoValor.toString() })
+                .eq('chave', 'valor_numero');
+
+            if (error) {
+                alert('Erro ao atualizar preço: ' + error.message);
+            } else {
+                valorUnitario = novoValor;
+                alert('Valor do número atualizado com sucesso!');
+                carregarAdmin();
+            }
         }
 
         async function carregarAdmin() {
+            await carregarConfiguracoes();
             const container = document.getElementById('lista-admin');
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
             
@@ -163,7 +206,6 @@
             carregarAdmin();
         }
 
-        // Sorteador Automático entre os números PAGOS
         async function realizarSorteio() {
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             const pagos = rifas.filter(item => item.status === 'pago');
@@ -173,15 +215,12 @@
                 return;
             }
 
-            // Sorteia aleatoriamente um dos itens pagos
             const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
-            
             const divResultado = document.getElementById('resultado-sorteio');
             divResultado.style.display = 'block';
             divResultado.innerHTML = `🎉 NÚMERO SORTEADO: <strong>${sorteado.numero}</strong><br>Ganhador: <strong>${sorteado.nome_comprador}</strong> (CPF: ${sorteado.cpf || 'N/A'})!`;
         }
 
-        // Salva os dados no Histórico e depois zera a rifa principal
         async function zerarEArquivarRifa() {
             if (!confirm('ATENÇÃO: Deseja salvar o histórico dos compradores atuais e zerar a rifa para um novo sorteio?')) {
                 return;
@@ -189,7 +228,6 @@
 
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             
-            // Agrupa os dados atuais para salvar no histórico
             let clientesMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
@@ -205,7 +243,6 @@
                 clientesMap[chave].numeros.push(item.numero);
             });
 
-            // Insere cada comprador na tabela de histórico
             let historicoParaInserir = [];
             for (let chave in clientesMap) {
                 let c = clientesMap[chave];
@@ -222,7 +259,6 @@
                 await _supabase.from('historico_vendas').insert(historicoParaInserir);
             }
 
-            // Zera a tabela principal
             await _supabase
                 .from('rifa_numeros')
                 .update({ status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null })

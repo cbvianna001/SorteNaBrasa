@@ -160,7 +160,7 @@
         <div class="logo-area">
             <div class="logo-placeholder"><img src="logo.png" alt="Logo" onerror="this.style.display='none'"></div>
             <h1>Sorte na Brasa</h1>
-            <div class="sub-title">1 numero por <strong>R$ 5,00</strong> ou <strong>5 numeros por R$ 20,00!</strong></div>
+            <div class="sub-title" id="txt-subtitulo-preco">Carregando valor...</div>
         </div>
         
         <div class="progress-container">
@@ -221,8 +221,31 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let selecionados = [];
+        let valorUnitario = 5.00; // Valor padrão inicial
+
+        // Busca o preço atualizado do banco de dados ao carregar a página
+        async function carregarPreco() {
+            const { data } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
+            if (data) {
+                valorUnitario = parseFloat(data.valor);
+            }
+            
+            let precoFormatado = valorUnitario.toFixed(2).replace('.', ',');
+            let precoCincoFormatado = (valorUnitario * 4).toFixed(2).replace('.', ','); // Exemplo proporcional de 5 números
+
+            document.getElementById('txt-subtitulo-preco').innerHTML = `1 numero por <strong>R$ ${precoFormatado}</strong> ou <strong>5 numeros por R$ ${precoCincoFormatado}!</strong>`;
+        }
+
+        function calcularValorTotal(qtd) {
+            let precoUnit = valorUnitario;
+            let precoCinco = precoUnit * 4; // Desconto proporcional para 5 números
+            let blocos = Math.floor(qtd / 5);
+            let resto = qtd % 5;
+            return (blocos * precoCinco) + (resto * precoUnit);
+        }
 
         async function carregarRifa() {
+            await carregarPreco();
             const grid = document.getElementById('grid-numeros');
             const { data: rifas, error } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
             
@@ -261,12 +284,6 @@
             });
         }
 
-        function calcularValorTotal(qtd) {
-            let blocos = Math.floor(qtd / 5);
-            let resto = qtd % 5;
-            return (blocos * 20.00) + (resto * 5.00);
-        }
-
         document.getElementById('form-pagamento').onsubmit = async (e) => {
             e.preventDefault();
             const nomeComprador = document.getElementById('nome').value;
@@ -287,7 +304,7 @@
             document.getElementById('txt-valor-total').innerText = "R$ " + totalPagarFormatado;
 
             const msg = encodeURIComponent(`Ola! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os numeros: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagarFormatado}. Segue o comprovante do Pix:`);
-            document.getElementById('link-whatsapp').href = `https://wa.me/55129992474896?text=${msg}`;
+            document.getElementById('link-whatsapp').href = `https://wa.me/5512992474896?text=${msg}`;
             
             document.getElementById('area-pagamento').classList.remove('hidden');
             document.getElementById('form-pagamento').classList.add('hidden');
