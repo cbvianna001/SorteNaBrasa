@@ -46,7 +46,7 @@
     <div class="container">
         <div class="instagram-header">
             <a href="https://www.instagram.com/sortenabrasarifas" target="_blank" class="instagram-btn">
-                ðŸ“¸ Siga nosso Instagram: @sortenabrasarifas
+                 Siga nosso Instagram: @sortenabrasarifas
             </a>
         </div>
 
@@ -64,7 +64,7 @@
         </div>
 
         <div id="grid-numeros" class="grid">
-            <p style="grid-column: span 10; text-align: center; color: #718093;">Carregando numeros...</p>
+            <p style="grid-column: span 10; text-align: center; color: #718093;">Carregando números...</p>
         </div>
 
         <div class="checkout-box">
@@ -73,7 +73,7 @@
                 <input type="text" id="nome" placeholder="Nome Completo" required>
                 <input type="text" id="cpf" placeholder="CPF (Ex: 000.000.000-00)" required>
                 <input type="text" id="whatsapp" placeholder="Seu WhatsApp (com DDD)" required>
-                <button type="submit" id="btn-reservar" disabled>AvanÃ§ar para o Pagamento</button>
+                <button type="submit" id="btn-reservar" disabled>Avançar para o Pagamento</button>
             </form>
 
             <div id="area-pagamento" class="hidden" style="background:#f1f2f6; padding:15px; border-radius:10px; margin-top:15px; text-align:center;">
@@ -87,46 +87,47 @@
 
         <div class="info-section">
             <h3>Regras do Sorteio</h3>
-            <p>ApÃ³s selecionar a quantidade de nÃºmeros, deverÃ¡ efetuar o pagamento e enviar o comprovante no WhatsApp. SÃ³ apÃ³s a confirmaÃ§Ã£o do pagamento seus nÃºmeros estarÃ£o reservados.</p>
+            <p>Após selecionar a quantidade de números, deverá efetuar o pagamento e enviar o comprovante no WhatsApp. Só após a confirmação do pagamento seus números estarão reservados.</p>
             
             <h3>Perguntas Frequentes (FAQ)</h3>
             <div class="faq-item">
-                <strong>â€¢ Como Ã© feito o sorteio?</strong><br>
-                Faremos o sorteio atravÃ©s de um sorteador automÃ¡tico.
+                <strong>• Como é feito o sorteio?</strong><br>
+                Faremos o sorteio através de um sorteador automático.
             </div>
             <div class="faq-item">
-                <strong>â€¢ Como recebo o prÃªmio?</strong><br>
-                Estamos localizados em SÃ£o JosÃ© dos Campos-SP. A retirada Ã© por conta do ganhador ou via pequeno frete negociado.
+                <strong>• Como recebo o prêmio?</strong><br>
+                Estamos localizados em São José dos Campos-SP. A retirada é por conta do ganhador ou via pequeno frete negociado.
             </div>
             <div class="faq-item">
-                <strong>â€¢ Onde posso tirar dÃºvidas?</strong><br>
+                <strong>• Onde posso tirar dúvidas?</strong><br>
                 Diretamente pelo nosso WhatsApp de suporte (12) 99247-4896.
             </div>
         </div>
     </div>
 
-    <!-- WhatsApp corrigido com o nÃºmero correto (12) 99247-4896 -->
-    <a href="https://wa.me/5512992474896?text=OlÃ¡! Gostaria de tirar uma dÃºvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank">ðŸ’¬</a>
+    <a href="https://wa.me/5512992474896?text=Olá! Gostaria de tirar uma dúvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank"></a>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Insira sua chave pÃºblica aqui
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Insira sua chave pública aqui
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let selecionados = [];
-        let valorUnitario = 5.00;
+        let valorUnitario = 20.00; // Valor padrão atualizado para 20
 
         async function carregarDadosIniciais() {
-            // Busca o texto customizado de preÃ§os do banco
+            // Busca o texto customizado de preços do banco
             const { data: dTxt } = await _supabase.from('configuracoes').select('*').eq('chave', 'texto_preco').single();
-            if (dTxt) {
+            if (dTxt && dTxt.valor) {
                 document.getElementById('txt-subtitulo-preco').innerText = dTxt.valor;
+            } else {
+                document.getElementById('txt-subtitulo-preco').innerText = "1 número por R$ 20,00 ou 5 números por R$ 80,00!";
             }
 
-            // Busca o valor base unitÃ¡rio para cÃ¡lculos
+            // Busca o valor base unitário para cálculos
             const { data: dVal } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
-            if (dVal) {
+            if (dVal && dVal.valor) {
                 valorUnitario = parseFloat(dVal.valor);
             }
         }
@@ -134,8 +135,9 @@
         function calcularValorTotal(qtd) {
             let blocos = Math.floor(qtd / 5);
             let resto = qtd % 5;
-            let precoCinco = (valorUnitario * 5) * 0.8;
-            return (blocos * (valorUnitario >= 5 ? 20 : precoCinco)) + (resto * valorUnitario);
+            // Se 5 números custam 80 (ou o equivalente proporcional ao valor base configurado)
+            let precoCinco = (valorUnitario === 20.00) ? 80.00 : (valorUnitario * 5) * 0.8; 
+            return (blocos * precoCinco) + (resto * valorUnitario);
         }
 
         async function carregarRifa() {
@@ -151,7 +153,7 @@
             let totalOcupados = rifas.filter(item => item.status !== 'disponivel').length;
             let porcentagem = Math.round((totalOcupados / rifas.length) * 100);
             document.getElementById('barra-progresso').style.width = porcentagem + '%';
-            document.getElementById('texto-progresso').innerText = `${porcentagem}% dos nÃºmeros vendidos/reservados`;
+            document.getElementById('texto-progresso').innerText = `${porcentagem}% dos números vendidos/reservados`;
 
             grid.innerHTML = '';
             rifas.forEach(item => {
@@ -197,8 +199,7 @@
             const totalPagarFormatado = valorTotal.toFixed(2).replace('.', ',');
             document.getElementById('txt-valor-total').innerText = "R$ " + totalPagarFormatado;
 
-            const msg = encodeURIComponent(`OlÃ¡! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os nÃºmeros: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagarFormatado}. Segue o comprovante do Pix:`);
-            // NÃºmero correto corrigido para 5512992474896 (sem o 9 extra)
+            const msg = encodeURIComponent(`Olá! Me chamo ${nomeComprador} (CPF: ${cpfComprador}) e reservei os números: *${selecionados.join(', ')}* na Sorte na Brasa, totalizando R$ ${totalPagarFormatado}. Segue o comprovante do Pix:`);
             document.getElementById('link-whatsapp').href = `https://wa.me/5512992474896?text=${msg}`;
             
             document.getElementById('area-pagamento').classList.remove('hidden');
