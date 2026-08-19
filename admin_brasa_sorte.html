@@ -18,7 +18,7 @@
         h1 { color: #d35400; text-align: center; }
         .config-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; }
         .historico-box { background: #fff; padding: 15px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        input[type="number"] { padding: 8px; width: 100px; border-radius: 4px; border: 1px solid #ccc; text-align: center; font-weight: bold; }
+        input[type="number"], input[type="text"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
         .resultado-sorteio { background: #f39c12; color: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 20px; display: none; }
     </style>
 </head>
@@ -32,24 +32,33 @@
 
     <div class="config-box">
         <h3>Configurações da Rifa</h3>
+        
         <div style="margin-bottom: 15px;">
-            <p style="font-size: 13px; color: #666;">Valor de cada número (R$):</p>
-            <input type="number" id="input-valor-numero" step="0.50" min="1.00">
-            <button class="btn-config" onclick="atualizarValorPreco()">Salvar Novo Preço</button>
+            <p style="font-size: 13px; color: #666;">Texto de Valores exibido no topo do site:</p>
+            <input type="text" id="input-texto-preco" style="width: 80%; margin-bottom: 5px;">
+            <br>
+            <button class="btn-config" onclick="atualizarTextoPreco()">Salvar Texto de Preços</button>
+        </div>
+
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+
+        <div style="margin-bottom: 15px;">
+            <p style="font-size: 13px; color: #666;">Valor base de cada número (R$ para cálculo):</p>
+            <input type="number" id="input-valor-numero" step="0.50" min="1.00" style="width: 100px; text-align: center;">
+            <button class="btn-config" onclick="atualizarValorPreco()">Salvar Valor Base</button>
         </div>
 
         <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
 
         <div>
             <p style="font-size: 13px; color: #666;">Quantidade total de números:</p>
-            <input type="number" id="input-qtd-total" value="100" min="10" max="1000">
+            <input type="number" id="input-qtd-total" value="100" min="10" max="1000" style="width: 100px; text-align: center;">
             <button class="btn-config" onclick="atualizarTotalNumeros()">Salvar Quantidade</button>
         </div>
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         
         <h3 style="color: #c0392b;">Área de Sorteio / Reiniciar</h3>
-        <p style="font-size: 12px; color: #555;">Ao zerar, os dados atuais serão salvos automaticamente no Histórico abaixo.</p>
         <button class="btn-zerar" onclick="zerarEArquivarRifa()">🔄 Salvar Histórico e Zerar Rifa</button>
     </div>
 
@@ -66,45 +75,42 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let valorUnitario = 5.00; // Padrão inicial
+        let valorUnitario = 5.00;
 
         async function carregarConfiguracoes() {
-            const { data } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
-            if (data) {
-                valorUnitario = parseFloat(data.valor);
+            const { data: dVal } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
+            if (dVal) {
+                valorUnitario = parseFloat(dVal.valor);
                 document.getElementById('input-valor-numero').value = valorUnitario.toFixed(2);
+            }
+
+            const { data: dTxt } = await _supabase.from('configuracoes').select('*').eq('chave', 'texto_preco').single();
+            if (dTxt) {
+                document.getElementById('input-texto-preco').value = dTxt.valor;
             }
         }
 
         function calcularValorTotal(qtd) {
-            // Se mantivermos a regra de 5 por R$ 20 proporcional ao novo valor unitário:
-            // Caso queira linear simples, mude para qtd * valorUnitario. Vamos manter proporcional:
-            let precoUnit = valorUnitario;
-            let precoCinco = precoUnit * 4; // Exemplo de desconto proporcional
             let blocos = Math.floor(qtd / 5);
             let resto = qtd % 5;
-            return (blocos * precoCinco) + (resto * precoUnit);
+            let precoCinco = (valorUnitario * 5) * 0.8; // Mantém a proporção de desconto se houver
+            return (blocos * (valorUnitario >= 5 ? 20 : precoCinco)) + (resto * valorUnitario);
         }
 
         async function atualizarValorPreco() {
             const novoValor = parseFloat(document.getElementById('input-valor-numero').value);
-            if (!novoValor || novoValor <= 0) {
-                alert('Digite um valor válido!');
-                return;
-            }
+            if (!novoValor || novoValor <= 0) { alert('Digite um valor válido!'); return; }
 
-            const { error } = await _supabase
-                .from('configuracoes')
-                .update({ valor: novoValor.toString() })
-                .eq('chave', 'valor_numero');
+            const { error } = await _supabase.from('configuracoes').update({ valor: novoValor.toString() }).eq('chave', 'valor_numero');
+            if (error) alert('Erro: ' + error.message);
+            else { valorUnitario = novoValor; alert('Valor base atualizado com sucesso!'); carregarAdmin(); }
+        }
 
-            if (error) {
-                alert('Erro ao atualizar preço: ' + error.message);
-            } else {
-                valorUnitario = novoValor;
-                alert('Valor do número atualizado com sucesso!');
-                carregarAdmin();
-            }
+        async function atualizarTextoPreco() {
+            const novoTexto = document.getElementById('input-texto-preco').value;
+            const { error } = await _supabase.from('configuracoes').update({ valor: novoTexto }).eq('chave', 'texto_preco');
+            if (error) alert('Erro: ' + error.message);
+            else alert('Texto de preços atualizado com sucesso!');
         }
 
         async function carregarAdmin() {
@@ -119,16 +125,9 @@
             let gruposMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
-                
                 let chave = item.status + '-' + (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
                 if (!gruposMap[chave]) {
-                    gruposMap[chave] = {
-                        nome: item.nome_comprador,
-                        cpf: item.cpf,
-                        whatsapp: item.whatsapp,
-                        statusGeral: item.status,
-                        numeros: []
-                    };
+                    gruposMap[chave] = { nome: item.nome_comprador, cpf: item.cpf, whatsapp: item.whatsapp, statusGeral: item.status, numeros: [] };
                 }
                 gruposMap[chave].numeros.push(item.numero);
             });
@@ -163,7 +162,6 @@
                     container.appendChild(div);
                 });
             }
-
             carregarHistorico();
         }
 
@@ -171,7 +169,6 @@
             const updateData = novoStatus === 'disponivel' 
                 ? { status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null }
                 : { status: novoStatus };
-
             for (let num of numerosArray) {
                 await _supabase.from('rifa_numeros').update(updateData).eq('numero', num);
             }
@@ -180,116 +177,66 @@
 
         async function atualizarTotalNumeros() {
             const novaQtd = parseInt(document.getElementById('input-qtd-total').value);
-            if (!novaQtd || novaQtd <= 0) {
-                alert('Digite um número válido!');
-                return;
-            }
-
-            if (!confirm(`Deseja alterar a quantidade total da rifa para ${novaQtd} números?`)) return;
+            if (!novaQtd || novaQtd <= 0) return;
+            if (!confirm(`Deseja alterar a quantidade total para ${novaQtd} números?`)) return;
 
             const { data: rifasAtuais } = await _supabase.from('rifa_numeros').select('*');
             const totalAtual = rifasAtuais.length;
 
             if (novaQtd > totalAtual) {
                 let novosRegistros = [];
-                for (let i = totalAtual + 1; i <= novaQtd; i++) {
-                    novosRegistros.push({ numero: i, status: 'disponivel' });
-                }
+                for (let i = totalAtual + 1; i <= novaQtd; i++) novosRegistros.push({ numero: i, status: 'disponivel' });
                 await _supabase.from('rifa_numeros').insert(novosRegistros);
             } else if (novaQtd < totalAtual) {
-                for (let i = totalAtual; i > novaQtd; i--) {
-                    await _supabase.from('rifa_numeros').delete().eq('numero', i);
-                }
+                for (let i = totalAtual; i > novaQtd; i--) await _supabase.from('rifa_numeros').delete().eq('numero', i);
             }
-
-            alert('Quantidade de números atualizada com sucesso!');
+            alert('Quantidade atualizada!');
             carregarAdmin();
         }
 
         async function realizarSorteio() {
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             const pagos = rifas.filter(item => item.status === 'pago');
-
-            if (pagos.length === 0) {
-                alert('Não há números com pagamento confirmado (pago) para realizar o sorteio!');
-                return;
-            }
-
+            if (pagos.length === 0) { alert('Nenhum número pago para sortear!'); return; }
             const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
             const divResultado = document.getElementById('resultado-sorteio');
             divResultado.style.display = 'block';
-            divResultado.innerHTML = `🎉 NÚMERO SORTEADO: <strong>${sorteado.numero}</strong><br>Ganhador: <strong>${sorteado.nome_comprador}</strong> (CPF: ${sorteado.cpf || 'N/A'})!`;
+            divResultado.innerHTML = `🎉 NÚMERO SORTEADO: <strong>${sorteado.numero}</strong><br>Ganhador: <strong>${sorteado.nome_comprador}</strong>`;
         }
 
         async function zerarEArquivarRifa() {
-            if (!confirm('ATENÇÃO: Deseja salvar o histórico dos compradores atuais e zerar a rifa para um novo sorteio?')) {
-                return;
-            }
-
+            if (!confirm('Deseja salvar o histórico e zerar a rifa?')) return;
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
-            
             let clientesMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
                 let chave = (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
-                if (!clientesMap[chave]) {
-                    clientesMap[chave] = {
-                        nome: item.nome_comprador,
-                        cpf: item.cpf,
-                        whatsapp: item.whatsapp,
-                        numeros: []
-                    };
-                }
+                if (!clientesMap[chave]) clientesMap[chave] = { nome: item.nome_comprador, cpf: item.cpf, whatsapp: item.whatsapp, numeros: [] };
                 clientesMap[chave].numeros.push(item.numero);
             });
 
             let historicoParaInserir = [];
             for (let chave in clientesMap) {
                 let c = clientesMap[chave];
-                historicoParaInserir.push({
-                    nome: c.nome,
-                    cpf: c.cpf,
-                    whatsapp: c.whatsapp,
-                    numeros: c.numeros.join(', '),
-                    total_pago: calcularValorTotal(c.numeros.length)
-                });
+                historicoParaInserir.push({ nome: c.nome, cpf: c.cpf, whatsapp: c.whatsapp, numeros: c.numeros.join(', '), total_pago: calcularValorTotal(c.numeros.length) });
             }
+            if (historicoParaInserir.length > 0) await _supabase.from('historico_vendas').insert(historicoParaInserir);
 
-            if (historicoParaInserir.length > 0) {
-                await _supabase.from('historico_vendas').insert(historicoParaInserir);
-            }
-
-            await _supabase
-                .from('rifa_numeros')
-                .update({ status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null })
-                .gte('numero', 1);
-
-            alert('Histórico salvo com sucesso e rifa zerada para a próxima edição!');
+            await _supabase.from('rifa_numeros').update({ status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null }).gte('numero', 1);
+            alert('Rifa zerada com sucesso!');
             document.getElementById('resultado-sorteio').style.display = 'none';
             carregarAdmin();
         }
 
         async function carregarHistorico() {
             const containerHist = document.getElementById('lista-historico');
-            const { data: historico, error } = await _supabase.from('historico_vendas').select('*').order('data_salvamento', { ascending: false });
-
-            if (error || !historico || historico.length === 0) {
-                containerHist.innerHTML = '<p style="font-size: 13px; color: #777;">Nenhum histórico de sorteio anterior salvo ainda.</p>';
-                return;
-            }
-
+            const { data: historico } = await _supabase.from('historico_vendas').select('*').order('data_salvamento', { ascending: false });
+            if (!historico || historico.length === 0) { containerHist.innerHTML = '<p style="font-size: 13px; color: #777;">Nenhum histórico anterior.</p>'; return; }
             containerHist.innerHTML = '';
-            historico.forEach(h => {
-                let dataFormatada = new Date(h.data_salvamento).toLocaleDateString('pt-BR') + ' às ' + new Date(h.data_salvamento).toLocaleTimeString('pt-BR');
+            historico.navigation = historico.forEach(h => {
                 const divH = document.createElement('div');
                 divH.style.cssText = "background: #f9f9f9; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #8e44ad; font-size: 13px;";
-                divH.innerHTML = `
-                    <strong>Data do Sorteio/Fechamento:</strong> ${dataFormatada}<br>
-                    <strong>Comprador:</strong> ${h.nome} (CPF: ${h.cpf || 'N/A'})<br>
-                    <strong>WhatsApp:</strong> ${h.whatsapp || 'N/A'}<br>
-                    <strong>Números:</strong> ${h.numeros}<br>
-                    <strong>Total Arrecadado deste participante:</strong> R$ ${Number(h.total_pago).toFixed(2).replace('.', ',')}
-                `;
+                divH.innerHTML = `<strong>Comprador:</strong> ${h.nome} | <strong>Números:</strong> ${h.numeros} | <strong>Total:</strong> R$ ${Number(h.total_pago).toFixed(2)}`;
                 containerHist.appendChild(divH);
             });
         }
