@@ -88,7 +88,6 @@
             </div>
         </div>
 
-        <!-- Secao publica de Ganhadores Anteriores -->
         <div class="ganhadores-box">
             <h3>🏆 Ganhadores Anteriores</h3>
             <div id="lista-ganhadores-publico" style="font-size: 13px; color: #555;">Carregando ganhadores...</div>
@@ -113,7 +112,6 @@
             </div>
         </div>
 
-        <!-- Termo LGPD -->
         <div class="lgpd-footer">
             Conforme a LGPD (Lei Geral de Protecao de Dados), suas informacoes fornecidas sao utilizadas exclusivamente para validacao e contato desta acao entre amigos. Seus dados estao protegidos e nao sao compartilhados.
         </div>
@@ -135,7 +133,7 @@
             if (dTxt && dTxt.valor) {
                 document.getElementById('txt-subtitulo-preco').innerText = dTxt.valor;
             } else {
-                document.getElementById('txt-subtitulo-preco').innerText = "Valor por numero definido no painel";
+                document.getElementById('txt-subtitulo-preco').innerText = "1 numero por R$ 20,00";
             }
 
             const { data: dVal } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();

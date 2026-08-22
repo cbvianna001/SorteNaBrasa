@@ -27,7 +27,7 @@
     <h1>Painel de Controle - Sorte na Brasa</h1>
     
     <div style="text-align: center;">
-        <button class="btn-sorteador" id="btn-sortear" onclick="realizarSorteio()"> Sortear Numero Premiado Agora!</button>
+        <button class="btn-sorteador" id="btn-sortear" onclick="realizarSorteio()">ğŸ² Sortear Numero Premiado Agora!</button>
     </div>
     <div id="resultado-sorteio" class="resultado-sorteio"></div>
 
@@ -52,18 +52,18 @@
         </div>
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         <h3 style="color: #c0392b;">Area de Sorteio / Reiniciar</h3>
-        <button class="btn-zerar" onclick="zerarEArquivarRifa()"> Salvar Historico e Zerar Rifa</button>
+        <button class="btn-zerar" onclick="zerarEArquivarRifa()">ğŸ”„ Salvar Historico e Zerar Rifa</button>
     </div>
 
     <div id="lista-admin">Carregando dados...</div>
 
     <div class="historico-box">
-        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"> Historico de Vendas Anteriores</h3>
+        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">ğŸ“‚ Historico de Vendas Anteriores</h3>
         <div id="lista-historico">Carregando historico...</div>
     </div>
 
     <div class="historico-box" style="margin-top: 20px;">
-        <h3 style="color: #8e44ad; border-bottom: 2px solid #eee; padding-bottom: 8px;"> Ganhadores Salvos (Exibidos no Site)</h3>
+        <h3 style="color: #8e44ad; border-bottom: 2px solid #eee; padding-bottom: 8px;">ğŸ† Ganhadores Salvos (Exibidos no Site)</h3>
         <div id="lista-ganhadores-admin">Carregando ganhadores...</div>
     </div>
 
@@ -87,13 +87,13 @@
         async function atualizarValorPreco() {
             const novoValor = parseFloat(document.getElementById('input-valor-numero').value);
             if (!novoValor || novoValor <= 0) { alert('Digite um valor valido!'); return; }
-            await _supabase.from('configuracoes').update({ valor: novoValor.toString() }).eq('chave', 'valor_numero');
+            await _supabase.from('configuracoes').upsert({ chave: 'valor_numero', valor: novoValor.toString() });
             valorUnitario = novoValor; alert('Valor unitario atualizado!'); carregarAdmin();
         }
 
         async function atualizarTextoPreco() {
             const novoTexto = document.getElementById('input-texto-preco').value;
-            await _supabase.from('configuracoes').update({ valor: novoTexto }).eq('chave', 'texto_preco');
+            await _supabase.from('configuracoes').upsert({ chave: 'texto_preco', valor: novoTexto });
             alert('Texto atualizado!');
         }
 
@@ -165,7 +165,6 @@
             alert('Quantidade atualizada!'); carregarAdmin();
         }
 
-        // Sorteio com Animação + Censura de WhatsApp (LGPD) e salvamento automático de Ganhador
         async function realizarSorteio() {
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             const pagos = rifas.filter(item => item.status === 'pago');
@@ -179,19 +178,17 @@
             let contador = 0;
             let intervaloAnimacao = setInterval(async () => {
                 let aleatorio = pagos[Math.floor(Math.random() * pagos.length)];
-                divResultado.innerHTML = ` SORTEANDO...<br><span style="font-size: 32px;">${aleatorio.numero}</span>`;
+                divResultado.innerHTML = `ğŸ² SORTEANDO...<br><span style="font-size: 32px;">${aleatorio.numero}</span>`;
                 contador++;
                 if (contador >= 25) {
                     clearInterval(intervaloAnimacao);
                     const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
                     
-                    // Censura os últimos 4 dígitos do WhatsApp para LGPD
                     let wppCensurado = sorteado.whatsapp ? sorteado.whatsapp.slice(0, -4) + '****' : 'N/A';
 
-                    divResultado.innerHTML = ` NUMERO PREMIADO: <span style="font-size: 36px; color: #f1c40f;">${sorteado.numero}</span><br> Ganhador: <strong>${sorteado.nome_comprador}</strong><br> WhatsApp: ${wppCensurado}`;
+                    divResultado.innerHTML = `ğŸ‰ NUMERO PREMIADO: <span style="font-size: 36px; color: #f1c40f;">${sorteado.numero}</span><br>ğŸ† Ganhador: <strong>${sorteado.nome_comprador}</strong><br>ğŸ“± WhatsApp: ${wppCensurado}`;
                     btnSortear.disabled = false;
 
-                    // Salva na tabela pública de ganhadores
                     await _supabase.from('historico_ganhadores').insert({
                         numero_sorteado: sorteado.numero,
                         nome: sorteado.nome_comprador,
