@@ -117,29 +117,22 @@
         let valorUnitario = 20.00;
 
         async function carregarDadosIniciais() {
-            // Busca o texto customizado de preços do banco
             const { data: dTxt } = await _supabase.from('configuracoes').select('*').eq('chave', 'texto_preco').single();
             if (dTxt && dTxt.valor) {
                 document.getElementById('txt-subtitulo-preco').innerText = dTxt.valor;
             } else {
-                document.getElementById('txt-subtitulo-preco').innerText = "1 numero por R$ 20,00 ou 5 numeros por R$ 80,00!";
+                document.getElementById('txt-subtitulo-preco').innerText = "Valor por numero definido no painel";
             }
 
-            // Busca o valor base unitário atualizado pelo admin
             const { data: dVal } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
             if (dVal && dVal.valor) {
                 valorUnitario = parseFloat(dVal.valor);
             }
         }
 
+        // Calculo com preco unico linear (quantidade vezes o valor unitario cadastrado)
         function calcularValorTotal(qtd) {
-            let blocos = Math.floor(qtd / 5);
-            let resto = qtd % 5;
-            
-            // Calcula o pacote de 5 números baseado exatamente no valor unitário que o admin definiu
-            // (Ex: se cada um é 20, 5 números dariam 100, mas aplicando o desconto proporcional ao que foi configurado)
-            let precoCinco = (valorUnitario * 5) * 0.8; 
-            return (blocos * precoCinco) + (resto * valorUnitario);
+            return qtd * valorUnitario;
         }
 
         async function carregarRifa() {

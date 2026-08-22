@@ -14,68 +14,68 @@
         .btn-limpar { background: #c0392b; color: white; }
         .btn-config { background: #2980b9; color: white; }
         .btn-zerar { background: #c0392b; color: white; padding: 12px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .btn-sorteador { background: #8e44ad; color: white; padding: 12px; width: 100%; font-size: 16px; font-weight: bold; margin-bottom: 15px; border-radius: 6px; }
+        .btn-sorteador { background: #8e44ad; color: white; padding: 14px; width: 100%; font-size: 18px; font-weight: bold; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(142,68,173,0.3); }
         h1 { color: #d35400; text-align: center; }
         .config-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; }
         .historico-box { background: #fff; padding: 15px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         input[type="number"], input[type="text"] { padding: 8px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
-        .resultado-sorteio { background: #f39c12; color: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 20px; display: none; }
+        .resultado-sorteio { background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white; padding: 20px; border-radius: 10px; text-align: center; font-size: 20px; font-weight: bold; margin-bottom: 20px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
     </style>
 </head>
 <body>
     <h1>Painel de Controle - Sorte na Brasa</h1>
     
     <div style="text-align: center;">
-        <button class="btn-sorteador" onclick="realizarSorteio()">🎲 Sortear Número Premiado Agora!</button>
+        <button class="btn-sorteador" id="btn-sortear" onclick="realizarSorteio()">🎲 Sortear Numero Premiado Agora!</button>
     </div>
     <div id="resultado-sorteio" class="resultado-sorteio"></div>
 
     <div class="config-box">
-        <h3>Configurações da Rifa</h3>
+        <h3>Configuracoes da Rifa</h3>
         
         <div style="margin-bottom: 15px;">
             <p style="font-size: 13px; color: #666;">Texto de Valores exibido no topo do site:</p>
             <input type="text" id="input-texto-preco" style="width: 80%; margin-bottom: 5px;">
             <br>
-            <button class="btn-config" onclick="atualizarTextoPreco()">Salvar Texto de Preços</button>
+            <button class="btn-config" onclick="atualizarTextoPreco()">Salvar Texto de Precos</button>
         </div>
 
         <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
 
         <div style="margin-bottom: 15px;">
-            <p style="font-size: 13px; color: #666;">Valor base de cada número (R$ para cálculo):</p>
+            <p style="font-size: 13px; color: #666;">Valor unitario de cada numero (R$):</p>
             <input type="number" id="input-valor-numero" step="0.50" min="1.00" style="width: 100px; text-align: center;">
-            <button class="btn-config" onclick="atualizarValorPreco()">Salvar Valor Base</button>
+            <button class="btn-config" onclick="atualizarValorPreco()">Salvar Valor Unitario</button>
         </div>
 
         <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
 
         <div>
-            <p style="font-size: 13px; color: #666;">Quantidade total de números:</p>
+            <p style="font-size: 13px; color: #666;">Quantidade total de numeros:</p>
             <input type="number" id="input-qtd-total" value="100" min="10" max="1000" style="width: 100px; text-align: center;">
             <button class="btn-config" onclick="atualizarTotalNumeros()">Salvar Quantidade</button>
         </div>
         
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
         
-        <h3 style="color: #c0392b;">Área de Sorteio / Reiniciar</h3>
-        <button class="btn-zerar" onclick="zerarEArquivarRifa()">🔄 Salvar Histórico e Zerar Rifa</button>
+        <h3 style="color: #c0392b;">Area de Sorteio / Reiniciar</h3>
+        <button class="btn-zerar" onclick="zerarEArquivarRifa()">🔄 Salvar Historico e Zerar Rifa</button>
     </div>
 
     <div id="lista-admin">Carregando dados...</div>
 
     <div class="historico-box">
-        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">📂 Histórico de Vendas Anteriores</h3>
-        <div id="lista-historico">Carregando histórico...</div>
+        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">📂 Historico de Vendas Anteriores</h3>
+        <div id="lista-historico">Carregando historico...</div>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Mesma chave pública
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlldHpvdHlwaG9qZGZndGJzYm1vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5ODcxNDAsImV4cCI6MjEwMjU2MzE0MH0.ajlerHMhUcsnD6Awt4FA7DTHRe4ux5XtbhoKoYP-xQw'; // <--- Mesma chave publica
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let valorUnitario = 5.00;
+        let valorUnitario = 20.00;
 
         async function carregarConfiguracoes() {
             const { data: dVal } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
@@ -91,26 +91,23 @@
         }
 
         function calcularValorTotal(qtd) {
-            let blocos = Math.floor(qtd / 5);
-            let resto = qtd % 5;
-            let precoCinco = (valorUnitario * 5) * 0.8; // Mantém a proporção de desconto se houver
-            return (blocos * (valorUnitario >= 5 ? 20 : precoCinco)) + (resto * valorUnitario);
+            return qtd * valorUnitario;
         }
 
         async function atualizarValorPreco() {
             const novoValor = parseFloat(document.getElementById('input-valor-numero').value);
-            if (!novoValor || novoValor <= 0) { alert('Digite um valor válido!'); return; }
+            if (!novoValor || novoValor <= 0) { alert('Digite um valor valido!'); return; }
 
             const { error } = await _supabase.from('configuracoes').update({ valor: novoValor.toString() }).eq('chave', 'valor_numero');
             if (error) alert('Erro: ' + error.message);
-            else { valorUnitario = novoValor; alert('Valor base atualizado com sucesso!'); carregarAdmin(); }
+            else { valorUnitario = novoValor; alert('Valor unitario atualizado com sucesso!'); carregarAdmin(); }
         }
 
         async function atualizarTextoPreco() {
             const novoTexto = document.getElementById('input-texto-preco').value;
             const { error } = await _supabase.from('configuracoes').update({ valor: novoTexto }).eq('chave', 'texto_preco');
             if (error) alert('Erro: ' + error.message);
-            else alert('Texto de preços atualizado com sucesso!');
+            else alert('Texto de precos atualizado com sucesso!');
         }
 
         async function carregarAdmin() {
@@ -136,7 +133,7 @@
             const chaves = Object.keys(gruposMap);
 
             if (chaves.length === 0) {
-                container.innerHTML = '<p style="text-align:center; background:white; padding:20px; border-radius:8px;">Nenhum número reservado ou vendido no momento.</p>';
+                container.innerHTML = '<p style="text-align:center; background:white; padding:20px; border-radius:8px;">Nenhum numero reservado ou vendido no momento.</p>';
             } else {
                 chaves.forEach(chave => {
                     let grupo = gruposMap[chave];
@@ -148,15 +145,15 @@
                     div.innerHTML = `
                         <div>
                             <strong>Nome:</strong> ${grupo.nome}<br>
-                            <strong>CPF:</strong> ${grupo.cpf || 'Não informado'}<br>
-                            <strong>WhatsApp:</strong> ${grupo.whatsapp || 'Não informado'}<br>
+                            <strong>CPF:</strong> ${grupo.cpf || 'Nao informado'}<br>
+                            <strong>WhatsApp:</strong> ${grupo.whatsapp || 'Nao informado'}<br>
                             <strong>Status do Lote:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${grupo.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${grupo.statusGeral}</span><br>
-                            <strong>Números (${totalNumeros}):</strong> ${grupo.numeros.join(', ')}<br>
+                            <strong>Numeros (${totalNumeros}):</strong> ${grupo.numeros.join(', ')}<br>
                             <strong>Valor Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
                         </div>
                         <div style="margin-top: 10px;">
                             ${grupo.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(grupo.numeros)}, "pago")'>Confirmar Pagamento</button>` : ''}
-                            <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(grupo.numeros)}, "disponivel")'>Liberar Números</button>
+                            <button class="btn-limpar" onclick='atualizarLote(${JSON.stringify(grupo.numeros)}, "disponivel")'>Liberar Numeros</button>
                         </div>
                     `;
                     container.appendChild(div);
@@ -178,7 +175,7 @@
         async function atualizarTotalNumeros() {
             const novaQtd = parseInt(document.getElementById('input-qtd-total').value);
             if (!novaQtd || novaQtd <= 0) return;
-            if (!confirm(`Deseja alterar a quantidade total para ${novaQtd} números?`)) return;
+            if (!confirm(`Deseja alterar a quantidade total para ${novaQtd} numeros?`)) return;
 
             const { data: rifasAtuais } = await _supabase.from('rifa_numeros').select('*');
             const totalAtual = rifasAtuais.length;
@@ -194,18 +191,45 @@
             carregarAdmin();
         }
 
+        // Função com ANIMAÇÃO DE SORTEIO
         async function realizarSorteio() {
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             const pagos = rifas.filter(item => item.status === 'pago');
-            if (pagos.length === 0) { alert('Nenhum número pago para sortear!'); return; }
-            const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
+
+            if (pagos.length === 0) {
+                alert('Nenhum numero com pagamento confirmado (pago) para realizar o sorteio!');
+                return;
+            }
+
+            const btnSortear = document.getElementById('btn-sortear');
             const divResultado = document.getElementById('resultado-sorteio');
+            
+            btnSortear.disabled = true;
             divResultado.style.display = 'block';
-            divResultado.innerHTML = `🎉 NÚMERO SORTEADO: <strong>${sorteado.numero}</strong><br>Ganhador: <strong>${sorteado.nome_comprador}</strong>`;
+
+            let contador = 0;
+            let totalGiros = 25; // Quantidade de trocas visuais antes de parar
+
+            let intervaloAnimacao = setInterval(() => {
+                // Sorteia um número aleatório da lista de pagos para simular o efeito de roleta
+                let aleatorio = pagos[Math.floor(Math.random() * pagos.length)];
+                divResultado.innerHTML = `🎲 SORTEANDO...<br><span style="font-size: 32px;">${aleatorio.numero}</span>`;
+                contador++;
+
+                if (contador >= totalGiros) {
+                    clearInterval(intervaloAnimacao);
+                    
+                    // Sorteia o vencedor definitivo de forma oficial
+                    const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
+                    
+                    divResultado.innerHTML = `🎉 NUMERO PREMIADO: <span style="font-size: 36px; color: #f1c40f;">${sorteado.numero}</span><br>🏆 Ganhador: <strong>${sorteado.nome_comprador}</strong><br>📱 WhatsApp: ${sorteado.whatsapp || 'N/A'}`;
+                    btnSortear.disabled = false;
+                }
+            }, 100); // Velocidade da animação (100 milissegundos por troca)
         }
 
         async function zerarEArquivarRifa() {
-            if (!confirm('Deseja salvar o histórico e zerar a rifa?')) return;
+            if (!confirm('Deseja salvar o historico e zerar a rifa?')) return;
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             let clientesMap = {};
             rifas.forEach(item => {
@@ -231,12 +255,12 @@
         async function carregarHistorico() {
             const containerHist = document.getElementById('lista-historico');
             const { data: historico } = await _supabase.from('historico_vendas').select('*').order('data_salvamento', { ascending: false });
-            if (!historico || historico.length === 0) { containerHist.innerHTML = '<p style="font-size: 13px; color: #777;">Nenhum histórico anterior.</p>'; return; }
+            if (!historico || historico.length === 0) { containerHist.innerHTML = '<p style="font-size: 13px; color: #777;">Nenhum historico anterior.</p>'; return; }
             containerHist.innerHTML = '';
-            historico.navigation = historico.forEach(h => {
+            historico.forEach(h => {
                 const divH = document.createElement('div');
                 divH.style.cssText = "background: #f9f9f9; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #8e44ad; font-size: 13px;";
-                divH.innerHTML = `<strong>Comprador:</strong> ${h.nome} | <strong>Números:</strong> ${h.numeros} | <strong>Total:</strong> R$ ${Number(h.total_pago).toFixed(2)}`;
+                divH.innerHTML = `<strong>Comprador:</strong> ${h.nome} | <strong>Numeros:</strong> ${h.numeros} | <strong>Total:</strong> R$ ${Number(h.total_pago).toFixed(2).replace('.', ',')}`;
                 containerHist.appendChild(divH);
             });
         }
