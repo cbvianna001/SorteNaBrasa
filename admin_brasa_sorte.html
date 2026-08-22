@@ -15,6 +15,7 @@
         .btn-config { background: #2980b9; color: white; }
         .btn-zerar { background: #c0392b; color: white; padding: 12px; width: 100%; font-size: 15px; margin-top: 10px; }
         .btn-sorteador { background: #8e44ad; color: white; padding: 14px; width: 100%; font-size: 18px; font-weight: bold; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(142,68,173,0.3); }
+        .btn-excluir { background: #e74c3c; color: white; padding: 5px 8px; font-size: 11px; float: right; }
         h1 { color: #d35400; text-align: center; }
         .config-box { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center; }
         .historico-box { background: #fff; padding: 15px; border-radius: 8px; margin-top: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -26,47 +27,44 @@
     <h1>Painel de Controle - Sorte na Brasa</h1>
     
     <div style="text-align: center;">
-        <button class="btn-sorteador" id="btn-sortear" onclick="realizarSorteio()">🎲 Sortear Numero Premiado Agora!</button>
+        <button class="btn-sorteador" id="btn-sortear" onclick="realizarSorteio()"> Sortear Numero Premiado Agora!</button>
     </div>
     <div id="resultado-sorteio" class="resultado-sorteio"></div>
 
     <div class="config-box">
         <h3>Configuracoes da Rifa</h3>
-        
         <div style="margin-bottom: 15px;">
             <p style="font-size: 13px; color: #666;">Texto de Valores exibido no topo do site:</p>
-            <input type="text" id="input-texto-preco" style="width: 80%; margin-bottom: 5px;">
-            <br>
+            <input type="text" id="input-texto-preco" style="width: 80%; margin-bottom: 5px;"><br>
             <button class="btn-config" onclick="atualizarTextoPreco()">Salvar Texto de Precos</button>
         </div>
-
         <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-
         <div style="margin-bottom: 15px;">
             <p style="font-size: 13px; color: #666;">Valor unitario de cada numero (R$):</p>
             <input type="number" id="input-valor-numero" step="0.50" min="1.00" style="width: 100px; text-align: center;">
             <button class="btn-config" onclick="atualizarValorPreco()">Salvar Valor Unitario</button>
         </div>
-
         <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-
         <div>
             <p style="font-size: 13px; color: #666;">Quantidade total de numeros:</p>
             <input type="number" id="input-qtd-total" value="100" min="10" max="1000" style="width: 100px; text-align: center;">
             <button class="btn-config" onclick="atualizarTotalNumeros()">Salvar Quantidade</button>
         </div>
-        
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
-        
         <h3 style="color: #c0392b;">Area de Sorteio / Reiniciar</h3>
-        <button class="btn-zerar" onclick="zerarEArquivarRifa()">🔄 Salvar Historico e Zerar Rifa</button>
+        <button class="btn-zerar" onclick="zerarEArquivarRifa()"> Salvar Historico e Zerar Rifa</button>
     </div>
 
     <div id="lista-admin">Carregando dados...</div>
 
     <div class="historico-box">
-        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;">📂 Historico de Vendas Anteriores</h3>
+        <h3 style="color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 8px;"> Historico de Vendas Anteriores</h3>
         <div id="lista-historico">Carregando historico...</div>
+    </div>
+
+    <div class="historico-box" style="margin-top: 20px;">
+        <h3 style="color: #8e44ad; border-bottom: 2px solid #eee; padding-bottom: 8px;"> Ganhadores Salvos (Exibidos no Site)</h3>
+        <div id="lista-ganhadores-admin">Carregando ganhadores...</div>
     </div>
 
     <script>
@@ -79,59 +77,42 @@
 
         async function carregarConfiguracoes() {
             const { data: dVal } = await _supabase.from('configuracoes').select('*').eq('chave', 'valor_numero').single();
-            if (dVal) {
-                valorUnitario = parseFloat(dVal.valor);
-                document.getElementById('input-valor-numero').value = valorUnitario.toFixed(2);
-            }
-
+            if (dVal) { valorUnitario = parseFloat(dVal.valor); document.getElementById('input-valor-numero').value = valorUnitario.toFixed(2); }
             const { data: dTxt } = await _supabase.from('configuracoes').select('*').eq('chave', 'texto_preco').single();
-            if (dTxt) {
-                document.getElementById('input-texto-preco').value = dTxt.valor;
-            }
+            if (dTxt) { document.getElementById('input-texto-preco').value = dTxt.valor; }
         }
 
-        function calcularValorTotal(qtd) {
-            return qtd * valorUnitario;
-        }
+        function calcularValorTotal(qtd) { return qtd * valorUnitario; }
 
         async function atualizarValorPreco() {
             const novoValor = parseFloat(document.getElementById('input-valor-numero').value);
             if (!novoValor || novoValor <= 0) { alert('Digite um valor valido!'); return; }
-
-            const { error } = await _supabase.from('configuracoes').update({ valor: novoValor.toString() }).eq('chave', 'valor_numero');
-            if (error) alert('Erro: ' + error.message);
-            else { valorUnitario = novoValor; alert('Valor unitario atualizado com sucesso!'); carregarAdmin(); }
+            await _supabase.from('configuracoes').update({ valor: novoValor.toString() }).eq('chave', 'valor_numero');
+            valorUnitario = novoValor; alert('Valor unitario atualizado!'); carregarAdmin();
         }
 
         async function atualizarTextoPreco() {
             const novoTexto = document.getElementById('input-texto-preco').value;
-            const { error } = await _supabase.from('configuracoes').update({ valor: novoTexto }).eq('chave', 'texto_preco');
-            if (error) alert('Erro: ' + error.message);
-            else alert('Texto de precos atualizado com sucesso!');
+            await _supabase.from('configuracoes').update({ valor: novoTexto }).eq('chave', 'texto_preco');
+            alert('Texto atualizado!');
         }
 
         async function carregarAdmin() {
             await carregarConfiguracoes();
             const container = document.getElementById('lista-admin');
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*').order('numero', { ascending: true });
-            
-            if (rifas && rifas.length > 0) {
-                document.getElementById('input-qtd-total').value = rifas.length;
-            }
+            if (rifas && rifas.length > 0) document.getElementById('input-qtd-total').value = rifas.length;
 
             let gruposMap = {};
             rifas.forEach(item => {
                 if (item.status === 'disponivel') return;
                 let chave = item.status + '-' + (item.cpf || 'sem-cpf') + '-' + (item.nome_comprador || 'desconhecido');
-                if (!gruposMap[chave]) {
-                    gruposMap[chave] = { nome: item.nome_comprador, cpf: item.cpf, whatsapp: item.whatsapp, statusGeral: item.status, numeros: [] };
-                }
+                if (!gruposMap[chave]) gruposMap[chave] = { nome: item.nome_comprador, cpf: item.cpf, whatsapp: item.whatsapp, statusGeral: item.status, numeros: [] };
                 gruposMap[chave].numeros.push(item.numero);
             });
 
             container.innerHTML = '';
             const chaves = Object.keys(gruposMap);
-
             if (chaves.length === 0) {
                 container.innerHTML = '<p style="text-align:center; background:white; padding:20px; border-radius:8px;">Nenhum numero reservado ou vendido no momento.</p>';
             } else {
@@ -139,7 +120,6 @@
                     let grupo = gruposMap[chave];
                     let totalNumeros = grupo.numeros.length;
                     let valorTotal = calcularValorTotal(totalNumeros);
-
                     const div = document.createElement('div');
                     div.className = 'card ' + grupo.statusGeral;
                     div.innerHTML = `
@@ -147,9 +127,9 @@
                             <strong>Nome:</strong> ${grupo.nome}<br>
                             <strong>CPF:</strong> ${grupo.cpf || 'Nao informado'}<br>
                             <strong>WhatsApp:</strong> ${grupo.whatsapp || 'Nao informado'}<br>
-                            <strong>Status do Lote:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${grupo.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${grupo.statusGeral}</span><br>
+                            <strong>Status:</strong> <span style="text-transform: uppercase; font-weight: bold; color: ${grupo.statusGeral === 'pago' ? '#27ae60' : '#f39c12'}">${grupo.statusGeral}</span><br>
                             <strong>Numeros (${totalNumeros}):</strong> ${grupo.numeros.join(', ')}<br>
-                            <strong>Valor Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
+                            <strong>Total:</strong> R$ ${valorTotal.toFixed(2).replace('.', ',')}
                         </div>
                         <div style="margin-top: 10px;">
                             ${grupo.statusGeral === 'reservado' ? `<button class="btn-pago" onclick='atualizarLote(${JSON.stringify(grupo.numeros)}, "pago")'>Confirmar Pagamento</button>` : ''}
@@ -160,26 +140,21 @@
                 });
             }
             carregarHistorico();
+            carregarGanhadoresAdmin();
         }
 
         async function atualizarLote(numerosArray, novoStatus) {
-            const updateData = novoStatus === 'disponivel' 
-                ? { status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null }
-                : { status: novoStatus };
-            for (let num of numerosArray) {
-                await _supabase.from('rifa_numeros').update(updateData).eq('numero', num);
-            }
+            const updateData = novoStatus === 'disponivel' ? { status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null } : { status: novoStatus };
+            for (let num of numerosArray) await _supabase.from('rifa_numeros').update(updateData).eq('numero', num);
             carregarAdmin();
         }
 
         async function atualizarTotalNumeros() {
             const novaQtd = parseInt(document.getElementById('input-qtd-total').value);
             if (!novaQtd || novaQtd <= 0) return;
-            if (!confirm(`Deseja alterar a quantidade total para ${novaQtd} numeros?`)) return;
-
+            if (!confirm(`Alterar total para ${novaQtd} numeros?`)) return;
             const { data: rifasAtuais } = await _supabase.from('rifa_numeros').select('*');
             const totalAtual = rifasAtuais.length;
-
             if (novaQtd > totalAtual) {
                 let novosRegistros = [];
                 for (let i = totalAtual + 1; i <= novaQtd; i++) novosRegistros.push({ numero: i, status: 'disponivel' });
@@ -187,49 +162,48 @@
             } else if (novaQtd < totalAtual) {
                 for (let i = totalAtual; i > novaQtd; i--) await _supabase.from('rifa_numeros').delete().eq('numero', i);
             }
-            alert('Quantidade atualizada!');
-            carregarAdmin();
+            alert('Quantidade atualizada!'); carregarAdmin();
         }
 
-        // Função com ANIMAÇÃO DE SORTEIO
+        // Sorteio com Anima��o + Censura de WhatsApp (LGPD) e salvamento autom�tico de Ganhador
         async function realizarSorteio() {
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             const pagos = rifas.filter(item => item.status === 'pago');
-
-            if (pagos.length === 0) {
-                alert('Nenhum numero com pagamento confirmado (pago) para realizar o sorteio!');
-                return;
-            }
+            if (pagos.length === 0) { alert('Nenhum numero pago para sortear!'); return; }
 
             const btnSortear = document.getElementById('btn-sortear');
             const divResultado = document.getElementById('resultado-sorteio');
-            
             btnSortear.disabled = true;
             divResultado.style.display = 'block';
 
             let contador = 0;
-            let totalGiros = 25; // Quantidade de trocas visuais antes de parar
-
-            let intervaloAnimacao = setInterval(() => {
-                // Sorteia um número aleatório da lista de pagos para simular o efeito de roleta
+            let intervaloAnimacao = setInterval(async () => {
                 let aleatorio = pagos[Math.floor(Math.random() * pagos.length)];
-                divResultado.innerHTML = `🎲 SORTEANDO...<br><span style="font-size: 32px;">${aleatorio.numero}</span>`;
+                divResultado.innerHTML = ` SORTEANDO...<br><span style="font-size: 32px;">${aleatorio.numero}</span>`;
                 contador++;
-
-                if (contador >= totalGiros) {
+                if (contador >= 25) {
                     clearInterval(intervaloAnimacao);
-                    
-                    // Sorteia o vencedor definitivo de forma oficial
                     const sorteado = pagos[Math.floor(Math.random() * pagos.length)];
                     
-                    divResultado.innerHTML = `🎉 NUMERO PREMIADO: <span style="font-size: 36px; color: #f1c40f;">${sorteado.numero}</span><br>🏆 Ganhador: <strong>${sorteado.nome_comprador}</strong><br>📱 WhatsApp: ${sorteado.whatsapp || 'N/A'}`;
+                    // Censura os �ltimos 4 d�gitos do WhatsApp para LGPD
+                    let wppCensurado = sorteado.whatsapp ? sorteado.whatsapp.slice(0, -4) + '****' : 'N/A';
+
+                    divResultado.innerHTML = ` NUMERO PREMIADO: <span style="font-size: 36px; color: #f1c40f;">${sorteado.numero}</span><br> Ganhador: <strong>${sorteado.nome_comprador}</strong><br> WhatsApp: ${wppCensurado}`;
                     btnSortear.disabled = false;
+
+                    // Salva na tabela p�blica de ganhadores
+                    await _supabase.from('historico_ganhadores').insert({
+                        numero_sorteado: sorteado.numero,
+                        nome: sorteado.nome_comprador,
+                        whatsapp: wppCensurado
+                    });
+                    carregarGanhadoresAdmin();
                 }
-            }, 100); // Velocidade da animação (100 milissegundos por troca)
+            }, 100);
         }
 
         async function zerarEArquivarRifa() {
-            if (!confirm('Deseja salvar o historico e zerar a rifa?')) return;
+            if (!confirm('Deseja salvar o historico de vendas e zerar a rifa?')) return;
             const { data: rifas } = await _supabase.from('rifa_numeros').select('*');
             let clientesMap = {};
             rifas.forEach(item => {
@@ -238,14 +212,12 @@
                 if (!clientesMap[chave]) clientesMap[chave] = { nome: item.nome_comprador, cpf: item.cpf, whatsapp: item.whatsapp, numeros: [] };
                 clientesMap[chave].numeros.push(item.numero);
             });
-
             let historicoParaInserir = [];
             for (let chave in clientesMap) {
                 let c = clientesMap[chave];
                 historicoParaInserir.push({ nome: c.nome, cpf: c.cpf, whatsapp: c.whatsapp, numeros: c.numeros.join(', '), total_pago: calcularValorTotal(c.numeros.length) });
             }
             if (historicoParaInserir.length > 0) await _supabase.from('historico_vendas').insert(historicoParaInserir);
-
             await _supabase.from('rifa_numeros').update({ status: 'disponivel', nome_comprador: null, cpf: null, whatsapp: null }).gte('numero', 1);
             alert('Rifa zerada com sucesso!');
             document.getElementById('resultado-sorteio').style.display = 'none';
@@ -263,6 +235,30 @@
                 divH.innerHTML = `<strong>Comprador:</strong> ${h.nome} | <strong>Numeros:</strong> ${h.numeros} | <strong>Total:</strong> R$ ${Number(h.total_pago).toFixed(2).replace('.', ',')}`;
                 containerHist.appendChild(divH);
             });
+        }
+
+        async function carregarGanhadoresAdmin() {
+            const containerG = document.getElementById('lista-ganhadores-admin');
+            const { data: ganhadores } = await _supabase.from('historico_ganhadores').select('*').order('data_sorteio', { ascending: false });
+            if (!ganhadores || ganhadores.length === 0) { containerG.innerHTML = '<p style="font-size: 13px; color: #777;">Nenhum ganhador registrado ainda.</p>'; return; }
+            containerG.innerHTML = '';
+            ganhadores.forEach(g => {
+                const divG = document.createElement('div');
+                divG.style.cssText = "background: #f9f9f9; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #f1c40f; font-size: 13px; position: relative;";
+                divG.innerHTML = `
+                    <button class="btn-excluir" onclick="excluirGanhador(${g.id})">Excluir</button>
+                    <strong>Data:</strong> ${new Date(g.data_sorteio).toLocaleDateString('pt-BR')}<br>
+                    <strong>Numero Sorteado:</strong> ${g.numero_sorteado}<br>
+                    <strong>Ganhador:</strong> ${g.nome} (${g.whatsapp})
+                `;
+                containerG.appendChild(divG);
+            });
+        }
+
+        async function excluirGanhador(id) {
+            if (!confirm('Deseja excluir este ganhador do historico publico?')) return;
+            await _supabase.from('historico_ganhadores').delete().eq('id', id);
+            carregarGanhadoresAdmin();
         }
 
         carregarAdmin();

@@ -38,6 +38,9 @@
         .info-section { margin-top: 30px; border-top: 2px dashed #dfe4ea; padding-top: 20px; font-size: 13px; color: #57606f; }
         .info-section h3 { color: var(--primary-dark); margin-bottom: 10px; font-size: 16px; }
         .faq-item { margin-bottom: 12px; background: #f8f9fa; padding: 10px 12px; border-radius: 8px; }
+        .ganhadores-box { background: #fdf2e9; border: 1px solid #f5b041; padding: 15px; border-radius: 10px; margin-top: 25px; }
+        .ganhadores-box h3 { color: #d35400; margin-top: 0; margin-bottom: 10px; }
+        .lgpd-footer { text-align: center; font-size: 11px; color: #95a5a6; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
         .whatsapp-float { position: fixed; bottom: 25px; right: 25px; background: #25d366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); text-decoration: none; z-index: 1000; }
         .hidden { display: none; }
     </style>
@@ -46,7 +49,7 @@
     <div class="container">
         <div class="instagram-header">
             <a href="https://www.instagram.com/sortenabrasarifas" target="_blank" class="instagram-btn">
-                 Siga nosso Instagram: @sortenabrasarifas
+                📸 Siga nosso Instagram: @sortenabrasarifas
             </a>
         </div>
 
@@ -85,27 +88,38 @@
             </div>
         </div>
 
+        <!-- Secao publica de Ganhadores Anteriores -->
+        <div class="ganhadores-box">
+            <h3>🏆 Ganhadores Anteriores</h3>
+            <div id="lista-ganhadores-publico" style="font-size: 13px; color: #555;">Carregando ganhadores...</div>
+        </div>
+
         <div class="info-section">
             <h3>Regras do Sorteio</h3>
             <p>Apos selecionar a quantidade de numeros, devera efetuar o pagamento e enviar o comprovante no WhatsApp. So apos a confirmacao do pagamento seus numeros estarao reservados.</p>
             
             <h3>Perguntas Frequentes (FAQ)</h3>
             <div class="faq-item">
-                <strong>� Como e feito o sorteio?</strong><br>
+                <strong>• Como e feito o sorteio?</strong><br>
                 Faremos o sorteio atraves de um sorteador automatico.
             </div>
             <div class="faq-item">
-                <strong>� Como recebo o premio?</strong><br>
+                <strong>• Como recebo o premio?</strong><br>
                 Estamos localizados em Sao Jose dos Campos-SP. A retirada e por conta do ganhador ou via pequeno frete negociado.
             </div>
             <div class="faq-item">
-                <strong>� Onde posso tirar duvidas?</strong><br>
+                <strong>• Onde posso tirar duvidas?</strong><br>
                 Diretamente pelo nosso WhatsApp de suporte (12) 99247-4896.
             </div>
         </div>
+
+        <!-- Termo LGPD -->
+        <div class="lgpd-footer">
+            Conforme a LGPD (Lei Geral de Protecao de Dados), suas informacoes fornecidas sao utilizadas exclusivamente para validacao e contato desta acao entre amigos. Seus dados estao protegidos e nao sao compartilhados.
+        </div>
     </div>
 
-    <a href="https://wa.me/5512992474896?text=Ola! Gostaria de tirar uma duvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank"></a>
+    <a href="https://wa.me/5512992474896?text=Ola! Gostaria de tirar uma duvida sobre a Sorte na Brasa." class="whatsapp-float" target="_blank">💬</a>
 
     <script>
         const SUPABASE_URL = 'https://ietzotyphojdfgtbsbmo.supabase.co';
@@ -128,9 +142,9 @@
             if (dVal && dVal.valor) {
                 valorUnitario = parseFloat(dVal.valor);
             }
+            carregarGanhadoresPublico();
         }
 
-        // Calculo com preco unico linear (quantidade vezes o valor unitario cadastrado)
         function calcularValorTotal(qtd) {
             return qtd * valorUnitario;
         }
@@ -172,6 +186,22 @@
                     };
                 }
                 grid.appendChild(div);
+            });
+        }
+
+        async function carregarGanhadoresPublico() {
+            const containerG = document.getElementById('lista-ganhadores-publico');
+            const { data: ganhadores } = await _supabase.from('historico_ganhadores').select('*').order('data_sorteio', { ascending: false });
+            if (!ganhadores || ganhadores.length === 0) {
+                containerG.innerHTML = 'Nenhum sorteio realizado ainda.';
+                return;
+            }
+            containerG.innerHTML = '';
+            ganhadores.forEach(g => {
+                const p = document.createElement('p');
+                p.style.margin = '5px 0';
+                p.innerHTML = `• <strong>${new Date(g.data_sorteio).toLocaleDateString('pt-BR')}</strong> - Numero <strong>${g.numero_sorteado}</strong>: ${g.nome} (${g.whatsapp})`;
+                containerG.appendChild(p);
             });
         }
 
